@@ -20,6 +20,25 @@ STYLES = [("hidden", _("Скрито (влиза направо)")), ("countdown
 GFXS = ["auto", "1920x1080", "1366x768", "1280x720", "1600x900", "2560x1440"]
 
 
+def HELP():
+    return [
+        (_("Как се ползва"), _("1. На страница <b>Анимация</b> избери тема или направи „Моя анимация“ от GIF, видео или лого.\n"
+                               "2. На <b>Текст при зареждане</b> избери <b>Тих</b>, за да не се вижда текст.\n"
+                               "3. По желание настрой <b>GRUB</b>.\n"
+                               "4. Натисни <b>Приложи</b> и въведи паролата си. Промените се виждат при следващото рестартиране.")),
+        (_("Безопасно ли е?"), _("Основният файл <tt>/etc/default/grub</tt> не се пипа. Програмата пише само в "
+                                 "<tt>/etc/default/grub.d/99-boot-marka.cfg</tt> и в своите теми <tt>/usr/share/plymouth/themes/boot-marka-*</tt>. "
+                                 "При първото прилагане пази как е било всичко преди нея.")),
+        (_("Ако нещо се обърка"), _("• Черен екран при зареждане: изчакай, системата обикновено тръгва; натисни <b>Esc</b>, за да видиш текста.\n"
+                                    "• После отвори програмата и натисни <b>↶</b> (Върни както беше).\n"
+                                    "• Ръчно от терминала:\n<tt>sudo rm /etc/default/grub.d/99-boot-marka.cfg\nsudo plymouth-set-default-theme -R bgrt\nsudo update-grub</tt>")),
+        (_("NVIDIA"), _("С драйвера на NVIDIA анимацията се вижда само с <tt>nvidia-drm.modeset=1</tt>. "
+                        "Ако програмата го види, предлага „Поправка за NVIDIA“ на страница „Текст при зареждане“.")),
+        (_("Команден ред"), _("<tt>boot-marka --text</tt>  как е настроено сега\n<tt>boot-marka --reset</tt>  връща всичко както беше")),
+        (_("Проблем или идея?"), _("Пиши в GitHub: <a href=\"https://github.com/nikogurzov/boot-marka/issues\">github.com/nikogurzov/boot-marka/issues</a>")),
+    ]
+
+
 def main_text():
     print(J.as_text(J.collect()), end="")
 
@@ -297,6 +316,10 @@ def main_gui():
             self.undo_b = Gtk.Button(icon_name="edit-undo-symbolic", tooltip_text=_("↶ Върни както беше преди програмата"))
             self.undo_b.connect("clicked", self.undo)
             hb.pack_start(self.undo_b)
+            menu = Gio.Menu()
+            menu.append(_("Помощ"), "app.help")
+            menu.append(_("За програмата"), "app.about")
+            hb.pack_end(Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=menu, tooltip_text=_("Меню"), primary=True))
             tv.add_top_bar(hb)
             self.summary = Gtk.Label(xalign=0, wrap=True, css_classes=["dim-label"], margin_start=16, margin_end=16, margin_top=6, margin_bottom=8)
             tv.add_bottom_bar(self.summary)
@@ -546,6 +569,39 @@ def main_gui():
         def __init__(self):
             super().__init__(application_id="com.palamarka.bootmarka", flags=Gio.ApplicationFlags.DEFAULT_FLAGS)
 
+        def do_startup(self):
+            Adw.Application.do_startup(self)
+            for name, fn, acc in (("help", self.help, "F1"), ("about", self.about, None)):
+                a = Gio.SimpleAction.new(name, None)
+                a.connect("activate", fn)
+                self.add_action(a)
+                if acc:
+                    self.set_accels_for_action("app." + name, [acc])
+
+        def about(self, *_a):
+            d = Adw.AboutDialog(application_name=_("Зареждане (boot-marka)"), application_icon="preferences-desktop-display",
+                                version=J.VERSION, developer_name="Nikolay Gurzov",
+                                website="https://github.com/nikogurzov/boot-marka",
+                                issue_url="https://github.com/nikogurzov/boot-marka/issues",
+                                license_type=Gtk.License.MIT_X11, copyright="© 2026 Nikolay Gurzov",
+                                comments=_("Анимация при зареждане (Plymouth), тих старт и GRUB за Debian — с картинки и „Върни както беше“."))
+            d.add_link(_("Сайт на автора"), "https://tech.palamarka.com")
+            d.present(self.props.active_window)
+
+        def help(self, *_a):
+            w = Adw.Window(application=self, transient_for=self.props.active_window, modal=True, title=_("Помощ"), default_width=640, default_height=640)
+            tv = Adw.ToolbarView()
+            tv.add_top_bar(Adw.HeaderBar())
+            page = Adw.PreferencesPage()
+            for title, body in HELP():
+                g = Adw.PreferencesGroup(title=title)
+                g.add(Gtk.Label(label=body, xalign=0, wrap=True, selectable=True, use_markup=True))
+                page.add(g)
+            tv.set_content(page)
+            w.set_content(tv)
+            w.present()
+            GLib.idle_add(lambda: (w.set_focus(None), False)[1])
+
         def do_activate(self):
             p = Gtk.CssProvider()
             p.load_from_data(CSS)
@@ -553,19 +609,30 @@ def main_gui():
             w = self.props.active_window or Win(self)
             w.present()
             if SNIMKA:                     # --snimka папка: снима трите страници и излиза (за README и проверка)
-                def snap(names=["anim", "tekst", "grub"]):
+                def snap(names=["anim", "tekst", "grub", "pomosht", "za"]):
                     if not names:
                         self.quit(); return False
                     n = names.pop(0)
-                    w.stack.set_visible_child_name(n)
+                    tgt = w
+                    if n in ("anim", "tekst", "grub"):
+                        w.stack.set_visible_child_name(n)
+                    elif n == "pomosht":
+                        self.help()
+                    else:
+                        for x in list(self.get_windows()):
+                            if x is not w:
+                                x.close()
+                        self.about()
 
                     def save():
-                        pt = Gtk.WidgetPaintable.new(w)
-                        wd, ht = w.get_width(), w.get_height()
+                        tw = [x for x in self.get_windows() if x is not w]
+                        t = tw[-1] if (n == "pomosht" and tw) else w
+                        pt = Gtk.WidgetPaintable.new(t)
+                        wd, ht = t.get_width(), t.get_height()
                         snap_ = Gtk.Snapshot(); pt.snapshot(snap_, wd, ht)
                         node = snap_.to_node()
                         if node:
-                            tx = w.get_renderer().render_texture(node, None)
+                            tx = t.get_renderer().render_texture(node, None)
                             tx.save_to_png(os.path.join(SNIMKA, f"{n}.png"))
                         GLib.timeout_add(300, snap, names)
                         return False

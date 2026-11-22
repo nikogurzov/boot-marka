@@ -21,6 +21,30 @@ def set_ezik(e):
 
 
 EN = {
+    "Помощ": "Help",
+    "За програмата": "About",
+    "Меню": "Menu",
+    "Сайт на автора": "Author's website",
+    "Анимация при зареждане (Plymouth), тих старт и GRUB за Debian — с картинки и „Върни както беше“.":
+        "Boot splash (Plymouth), quiet boot and GRUB for Debian — with pictures and “Undo everything”.",
+    "Как се ползва": "How to use",
+    "1. На страница <b>Анимация</b> избери тема или направи „Моя анимация“ от GIF, видео или лого.\n2. На <b>Текст при зареждане</b> избери <b>Тих</b>, за да не се вижда текст.\n3. По желание настрой <b>GRUB</b>.\n4. Натисни <b>Приложи</b> и въведи паролата си. Промените се виждат при следващото рестартиране.":
+        "1. On the <b>Animation</b> page pick a theme or make “My animation” from a GIF, video or logo.\n2. On <b>Boot text</b> choose <b>Quiet</b> so no text is shown.\n3. Optionally set up <b>GRUB</b>.\n4. Press <b>Apply</b> and enter your password. You will see the changes on the next restart.",
+    "Безопасно ли е?": "Is it safe?",
+    "Основният файл <tt>/etc/default/grub</tt> не се пипа. Програмата пише само в <tt>/etc/default/grub.d/99-boot-marka.cfg</tt> и в своите теми <tt>/usr/share/plymouth/themes/boot-marka-*</tt>. При първото прилагане пази как е било всичко преди нея.":
+        "The main file <tt>/etc/default/grub</tt> is never touched. The program only writes <tt>/etc/default/grub.d/99-boot-marka.cfg</tt> and its own themes <tt>/usr/share/plymouth/themes/boot-marka-*</tt>. On the first apply it saves how everything was before.",
+    "Ако нещо се обърка": "If something goes wrong",
+    "• Черен екран при зареждане: изчакай, системата обикновено тръгва; натисни <b>Esc</b>, за да видиш текста.\n• После отвори програмата и натисни <b>↶</b> (Върни както беше).\n• Ръчно от терминала:\n<tt>sudo rm /etc/default/grub.d/99-boot-marka.cfg\nsudo plymouth-set-default-theme -R bgrt\nsudo update-grub</tt>":
+        "• Black screen while booting: wait, the system usually starts; press <b>Esc</b> to see the text.\n• Then open the program and press <b>↶</b> (Undo everything).\n• By hand in a terminal:\n<tt>sudo rm /etc/default/grub.d/99-boot-marka.cfg\nsudo plymouth-set-default-theme -R bgrt\nsudo update-grub</tt>",
+    "NVIDIA": "NVIDIA",
+    "С драйвера на NVIDIA анимацията се вижда само с <tt>nvidia-drm.modeset=1</tt>. Ако програмата го види, предлага „Поправка за NVIDIA“ на страница „Текст при зареждане“.":
+        "With the NVIDIA driver the animation only shows with <tt>nvidia-drm.modeset=1</tt>. If the program detects it, it offers an “NVIDIA fix” on the “Boot text” page.",
+    "Команден ред": "Command line",
+    "<tt>boot-marka --text</tt>  как е настроено сега\n<tt>boot-marka --reset</tt>  връща всичко както беше":
+        "<tt>boot-marka --text</tt>  shows the current setup\n<tt>boot-marka --reset</tt>  undoes everything",
+    "Проблем или идея?": "Problem or idea?",
+    "Пиши в GitHub: <a href=\"https://github.com/nikogurzov/boot-marka/issues\">github.com/nikogurzov/boot-marka/issues</a>":
+        "Write on GitHub: <a href=\"https://github.com/nikogurzov/boot-marka/issues\">github.com/nikogurzov/boot-marka/issues</a>",
     # --- режими и варианти (jezgro)
     "Тих": "Quiet",
     "Само анимацията. Без съобщения на ядрото и без мигащ курсор. Esc ги показва, ако потрябват.":

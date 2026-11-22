@@ -14,7 +14,7 @@ import sys as _sys
 _sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 from ezik import _
 
-VERSION = "0.5.0"
+VERSION = "0.5.1"
 ROOT = os.environ.get("BOOT_MARKA_ROOT", "")            # за тестовете: пясъчник вместо /
 THEMES = ROOT + "/usr/share/plymouth/themes"
 GRUB_MAIN = ROOT + "/etc/default/grub"
