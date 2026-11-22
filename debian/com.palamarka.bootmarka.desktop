@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Зареждане (boot-marka)
+Name[en]=Boot (boot-marka)
+Comment=Анимация при зареждане, тих старт и GRUB
+Comment[en]=Boot splash animation, quiet boot and GRUB
+Exec=/usr/bin/boot-marka
+Icon=preferences-desktop-display
+Terminal=false
+Categories=System;Settings;
+Keywords=plymouth;grub;boot;splash;зареждане;анимация;
+StartupWMClass=com.palamarka.bootmarka

@@ -1,0 +1,15 @@
+Package: boot-marka
+Version: @VERSION@
+Section: admin
+Priority: optional
+Architecture: all
+Installed-Size: @SIZE@
+Depends: python3 (>= 3.9), python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1 (>= 1.5), python3-pil, ffmpeg, plymouth, plymouth-themes, grub-common, initramfs-tools | dracut, pkexec | policykit-1
+Maintainer: Nikolay Gurzov <351854558+nikogurzov@users.noreply.github.com>
+Homepage: https://github.com/nikogurzov/boot-marka
+Description: анимация при зареждане, тих старт и GRUB за Debian — с картинки
+ Избираш анимацията при зареждане (Plymouth) от галерия с живи миниатюри
+ или правиш своя от GIF, видео или лого; махаш текста на ядрото от екрана;
+ настройваш менюто на GRUB. Всичко се връща с едно натискане.
+ Boot splash (Plymouth) gallery and custom animations from GIF/video,
+ quiet boot and GRUB settings for Debian, with undo.
