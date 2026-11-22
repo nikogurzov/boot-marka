@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass, field
 
-VERSION = "0.3.1"
+VERSION = "0.4.0"
 ROOT = os.environ.get("BOOT_MARKA_ROOT", "")            # за тестовете: пясъчник вместо /
 THEMES = ROOT + "/usr/share/plymouth/themes"
 GRUB_MAIN = ROOT + "/etc/default/grub"
@@ -343,11 +343,12 @@ Plymouth.SetBootProgressFunction(progress_callback);"""
 
 
 # ---------------------------------------------------------------- какво има под анимацията (повтарящо се, не зависи от времето)
-INDIKATORI = [("trikolor", "Трикольор: три ивици като знаме се пълнят на място, с искри"),
+INDIKATORI = [("trikolor", "Трикольор: една лента блещука отляво надясно, с искра"),
+              ("zname", "Знаме: три ивици се пълнят на място, с искри"),
               ("begashta", "Бягаща светлинка (повтаря се)"), ("tochki", "Три пулсиращи точки"),
               ("nadpis", "Надпис „Зареждане…“, който свети и угасва"), ("lenta", "Лента за напредъка (може да не стигне до края)"),
               ("nyama", "Нищо")]
-TRIKOLOR_SETUP = """tb = Image("b-bial.png");
+ZNAME_SETUP = """tb = Image("b-bial.png");
 tz = Image("b-zelen.png");
 tc = Image("b-cherven.png");
 iskra0 = Image("iskra.png");
@@ -377,7 +378,7 @@ while (j < 3) {
 fl = Sprite(big);
 fl.SetOpacity(0);"""
 
-TRIKOLOR_TICK = """    t = tick / 150;
+ZNAME_TICK = """    t = tick / 150;
     t = t - Math.Int(t);
     fade = 1;
     if (t > 0.8) fade = 1 - (t - 0.8) / 0.2;
@@ -412,8 +413,56 @@ TRIKOLOR_TICK = """    t = tick / 150;
         fl.SetOpacity(0);
     }"""
 
+TRIKOLOR_SETUP = """tb = Image("b-bial.png");
+tz = Image("b-zelen.png");
+tc = Image("b-cherven.png");
+iskra0 = Image("iskra.png");
+md = Math.Min(sw, sh);
+barw = md * 0.30;
+bh = md * 0.008;
+if (bh < 4) bh = 4;
+NC = 24;
+cw = barw / NC;
+barx = wx + sw / 2 - barw / 2;
+bary = bottom + sh * 0.05;
+iks = md * 0.05;
+isk = iskra0.Scale(iks, iks);
+c = 0;
+while (c < NC) {
+    im = tc;
+    if (c < NC * 2 / 3) im = tz;
+    if (c < NC / 3) im = tb;
+    cell[c] = Sprite(im.Scale(cw - 2, bh));
+    cell[c].SetPosition(barx + c * cw + 1, bary, 10);
+    cell[c].SetOpacity(0.3);
+    c = c + 1;
+}
+ride = Sprite(isk);
+ride.SetOpacity(0);"""
+
+TRIKOLOR_TICK = """    t = tick / 100;
+    t = t - Math.Int(t);
+    wave = t * 1.4 - 0.2;
+    c = 0;
+    while (c < NC) {
+        x = (c + 0.5) / NC;
+        g = 1 - Math.Abs(x - wave) / 0.22;
+        if (g < 0) g = 0;
+        g = g * g;
+        tw = 0.12 * (0.5 + 0.5 * Math.Sin(tick * 0.37 + c * 1.7));
+        cell[c].SetOpacity(0.32 + tw + 0.68 * g);
+        c = c + 1;
+    }
+    if (wave > 0 && wave < 1) {
+        ride.SetPosition(barx + wave * barw - iks / 2, bary + bh / 2 - iks / 2, 20);
+        ride.SetOpacity(0.55 + 0.45 * (0.5 + 0.5 * Math.Sin(tick * 1.1)));
+    } else {
+        ride.SetOpacity(0);
+    }"""
+
 IND = {
     "trikolor": (TRIKOLOR_SETUP, TRIKOLOR_TICK),
+    "zname": (ZNAME_SETUP, ZNAME_TICK),
     "begashta": ("""bar = Image("bar.png");
 barw = Math.Min(sw, sh) * 0.28;
 bary = bottom + sh * 0.05;
@@ -516,7 +565,7 @@ def make_custom(c, workdir=None, log=print):
                 return ImageFont.truetype(fp, sz)
         return ImageFont.load_default()
 
-    if c.indicator == "trikolor":
+    if c.indicator in ("trikolor", "zname"):
         for fn, rgb in (("b-bial.png", (255, 255, 255)), ("b-zelen.png", (0, 150, 110)), ("b-cherven.png", (214, 38, 18))):
             Image.new("RGB", (1, 1), rgb).save(os.path.join(d, fn))
         from PIL import ImageFilter
