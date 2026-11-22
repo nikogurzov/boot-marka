@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass, field
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 ROOT = os.environ.get("BOOT_MARKA_ROOT", "")            # за тестовете: пясъчник вместо /
 THEMES = ROOT + "/usr/share/plymouth/themes"
 GRUB_MAIN = ROOT + "/etc/default/grub"
@@ -343,10 +343,76 @@ Plymouth.SetBootProgressFunction(progress_callback);"""
 
 
 # ---------------------------------------------------------------- какво има под анимацията (повтарящо се, не зависи от времето)
-INDIKATORI = [("begashta", "Бягаща светлинка (повтаря се)"), ("tochki", "Три пулсиращи точки"),
+INDIKATORI = [("trikolor", "Трикольор: бяло, зелено, червено с искри (в стила на Google)"),
+              ("begashta", "Бягаща светлинка (повтаря се)"), ("tochki", "Три пулсиращи точки"),
               ("nadpis", "Надпис „Зареждане…“, който свети и угасва"), ("lenta", "Лента за напредъка (може да не стигне до края)"),
               ("nyama", "Нищо")]
+TRIKOLOR_SETUP = """tb = Image("b-bial.png");
+tz = Image("b-zelen.png");
+tc = Image("b-cherven.png");
+isk = Image("iskra.png");
+barw = Math.Min(sw, sh) * 0.30;
+bary = bottom + sh * 0.05;
+barx = wx + sw / 2 - barw / 2;
+iks = Math.Min(sw, sh) * 0.035;
+isk = isk.Scale(iks, iks);
+track = Sprite(tb.Scale(barw, 2));
+track.SetPosition(barx, bary + 1, 10);
+track.SetOpacity(0.15);
+col[0] = tb;
+col[1] = tz;
+col[2] = tc;
+j = 0;
+while (j < 3) {
+    segs[j] = Sprite();
+    iskri[j] = Sprite(isk);
+    iskri[j].SetOpacity(0);
+    j = j + 1;
+}
+fl0 = Sprite(isk);
+fl1 = Sprite(isk);
+fl0.SetOpacity(0);
+fl1.SetOpacity(0);
+f0 = 0;
+f1 = 20;"""
+
+TRIKOLOR_TICK = """    j = 0;
+    while (j < 3) {
+        p = tick / 130 + j * 0.14;
+        p = p - Math.Int(p);
+        e = p * p * (3 - 2 * p);
+        a = e * 1.35 - 0.35;
+        b = e * 1.35;
+        if (a < 0) a = 0;
+        if (b > 1) b = 1;
+        segw = (b - a) * barw;
+        if (segw >= 2) {
+            segs[j].SetImage(col[j].Scale(segw, 4));
+            segs[j].SetPosition(barx + a * barw, bary, 11 + j);
+            segs[j].SetOpacity(0.95);
+            iskri[j].SetPosition(barx + b * barw - iks / 2, bary + 2 - iks / 2, 20);
+            iskri[j].SetOpacity(0.45 + 0.55 * (0.5 + 0.5 * Math.Sin(tick * 0.8 + j * 2.1)));
+        } else {
+            segs[j].SetOpacity(0);
+            iskri[j].SetOpacity(0);
+        }
+        j = j + 1;
+    }
+    f0 = f0 - 1;
+    if (f0 <= 0) {
+        f0 = 40;
+        fl0.SetPosition(barx + Math.Random() * barw - iks / 2, bary + 2 - iks / 2, 19);
+    }
+    fl0.SetOpacity(Math.Sin(f0 / 40 * 3.14159) * 0.8);
+    f1 = f1 - 1;
+    if (f1 <= 0) {
+        f1 = 40;
+        fl1.SetPosition(barx + Math.Random() * barw - iks / 2, bary + 2 - iks / 2, 19);
+    }
+    fl1.SetOpacity(Math.Sin(f1 / 40 * 3.14159) * 0.8);"""
+
 IND = {
+    "trikolor": (TRIKOLOR_SETUP, TRIKOLOR_TICK),
     "begashta": ("""bar = Image("bar.png");
 barw = Math.Min(sw, sh) * 0.28;
 bary = bottom + sh * 0.05;
@@ -391,6 +457,11 @@ zs.SetPosition(wx + sw / 2 - zt.GetWidth() / 2, bottom + sh * 0.04, 10);""",
 }
 
 
+def ImageChops_lighter(a, b):
+    from PIL import ImageChops
+    return ImageChops.lighter(a, b)
+
+
 def slugify(s):
     tr = str.maketrans({"а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ж": "zh", "з": "z", "и": "i", "й": "y",
                         "к": "k", "л": "l", "м": "m", "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t", "у": "u",
@@ -410,7 +481,7 @@ class Custom:
     max_frames: int = 90
     label: str = ""
     label_color: tuple = (255, 255, 255)
-    indicator: str = "begashta"   # виж INDIKATORI
+    indicator: str = "trikolor"   # виж INDIKATORI
 
 
 def make_custom(c, workdir=None, log=print):
@@ -444,6 +515,20 @@ def make_custom(c, workdir=None, log=print):
                 return ImageFont.truetype(fp, sz)
         return ImageFont.load_default()
 
+    if c.indicator == "trikolor":
+        for fn, rgb in (("b-bial.png", (255, 255, 255)), ("b-zelen.png", (0, 150, 110)), ("b-cherven.png", (214, 38, 18))):
+            Image.new("RGB", (1, 1), rgb).save(os.path.join(d, fn))
+        from PIL import ImageFilter
+        S_ = 128
+        m = Image.new("L", (S_, S_), 0); md = ImageDraw.Draw(m)
+        c0 = S_ // 2
+        md.ellipse((c0 - 10, c0 - 10, c0 + 10, c0 + 10), fill=255)                      # ядро
+        md.line((c0, 6, c0, S_ - 6), fill=200, width=4); md.line((6, c0, S_ - 6, c0), fill=200, width=4)   # лъчите на искрата
+        m = Image.composite(m, m.filter(ImageFilter.GaussianBlur(6)), m)
+        halo = Image.new("L", (S_, S_), 0); ImageDraw.Draw(halo).ellipse((c0 - 30, c0 - 30, c0 + 30, c0 + 30), fill=120)
+        m = ImageChops_lighter(m, halo.filter(ImageFilter.GaussianBlur(14)))
+        iskra = Image.new("RGBA", (S_, S_), (255, 255, 240, 0)); iskra.putalpha(m)
+        iskra.resize((64, 64), Image.LANCZOS).save(os.path.join(d, "iskra.png"))
     if c.indicator == "tochki":
         big = Image.new("L", (256, 256), 0)
         ImageDraw.Draw(big).ellipse((8, 8, 248, 248), fill=255)

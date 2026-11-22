@@ -25,7 +25,7 @@ BACKUPS = J.ROOT + "/var/backups/boot-marka"
 BG_FINAL = "/boot/grub/boot-marka-fon.png"
 PLY_CONF = J.ROOT + "/etc/plymouth/plymouthd.conf"
 ENV = dict(os.environ, LC_ALL="C.UTF-8")
-ALLOWED = re.compile(r"^(frame-[0-9]{1,4}\.png|bar\.png|label\.png|dot\.png|zarezhdane\.png|boot-marka\.json|boot-marka-[a-z0-9-]{1,40}\.(script|plymouth))$")
+ALLOWED = re.compile(r"^(frame-[0-9]{1,4}\.png|bar\.png|label\.png|dot\.png|zarezhdane\.png|b-bial\.png|b-zelen\.png|b-cherven\.png|iskra\.png|boot-marka\.json|boot-marka-[a-z0-9-]{1,40}\.(script|plymouth))$")
 MAX_THEME = 60 * 1024 * 1024
 
 
