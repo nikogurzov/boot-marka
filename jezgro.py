@@ -183,8 +183,10 @@ SKIP = {"text", "details"}     # „текстови“ теми без карт
 
 
 def themes():
-    out = []
+    out, skrij = [], set(os.environ.get("BOOT_MARKA_SKRIJ", "").split(","))   # за снимки: скрива избрани теми
     for p in sorted(glob.glob(THEMES + "/*/*.plymouth")):
+        if os.path.basename(os.path.dirname(p)) in skrij:
+            continue
         if os.path.basename(p)[:-9] != os.path.basename(os.path.dirname(p)):
             continue
         out.append(theme_info(p))
