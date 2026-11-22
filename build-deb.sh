@@ -9,7 +9,7 @@ chmod 755 "$R"
 trap 'rm -rf "$R"' EXIT
 mkdir -p "$R/DEBIAN" "$R/usr/lib/boot-marka" "$R/usr/bin" "$R/usr/share/applications" "$R/usr/share/doc/boot-marka"
 install -m 755 boot-marka.py prilozhi.py "$R/usr/lib/boot-marka/"
-install -m 644 jezgro.py "$R/usr/lib/boot-marka/"
+install -m 644 jezgro.py ezik.py "$R/usr/lib/boot-marka/"
 ln -s ../lib/boot-marka/boot-marka.py "$R/usr/bin/boot-marka"
 install -m 644 debian/com.palamarka.bootmarka.desktop "$R/usr/share/applications/"
 install -m 644 README.md "$R/usr/share/doc/boot-marka/"

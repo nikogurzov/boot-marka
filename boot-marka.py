@@ -13,9 +13,10 @@ import threading
 HERE = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, HERE)
 import jezgro as J
+from ezik import _
 
 HELPER = os.path.join(HERE, "prilozhi.py")
-STYLES = [("hidden", "Скрито (влиза направо)"), ("countdown", "Обратно броене"), ("menu", "Меню")]
+STYLES = [("hidden", _("Скрито (влиза направо)")), ("countdown", _("Обратно броене")), ("menu", _("Меню"))]
 GFXS = ["auto", "1920x1080", "1366x768", "1280x720", "1600x900", "2560x1440"]
 
 
@@ -25,9 +26,9 @@ def main_text():
 
 def main_reset():
     if not J.history():
-        print("Програмата не е променяла нищо. Няма какво да връщам.")
+        print(_("Програмата не е променяла нищо. Няма какво да връщам."))
         return
-    if input("Да върна ли зареждането както беше преди програмата? [д/Н] ").strip().lower() in ("д", "да", "y", "yes"):
+    if input(_("Да върна ли зареждането както беше преди програмата? [д/Н] ")).strip().lower() in ("д", "да", "y", "yes"):
         sys.exit(subprocess.run(J.reset_command(HELPER)).returncode)
 
 
@@ -39,7 +40,7 @@ def main_gui():
         gi.require_version("Gdk", "4.0")
         from gi.repository import Adw, Gdk, Gio, GLib, Gtk
     except (ImportError, ValueError):
-        print("Липсва GTK 4 / libadwaita за прозореца:\n  sudo apt install python3-gi gir1.2-gtk-4.0 gir1.2-adw-1\n")
+        print(_("Липсва GTK 4 / libadwaita за прозореца:\n  sudo apt install python3-gi gir1.2-gtk-4.0 gir1.2-adw-1\n"))
         main_text()
         return
 
@@ -134,11 +135,11 @@ def main_gui():
             self.view = Gtk.TextView(buffer=self.buf, editable=False, monospace=True, css_classes=["log"],
                                      wrap_mode=Gtk.WrapMode.WORD_CHAR, top_margin=10, left_margin=10, right_margin=10)
             tv.set_content(Gtk.ScrolledWindow(child=self.view, vexpand=True))
-            self.close_b = Gtk.Button(label="Затвори", sensitive=False, halign=Gtk.Align.END, margin_end=12, margin_bottom=12, margin_top=6)
-            self.close_b.connect("clicked", lambda *_: self.close())
+            self.close_b = Gtk.Button(label=_("Затвори"), sensitive=False, halign=Gtk.Align.END, margin_end=12, margin_bottom=12, margin_top=6)
+            self.close_b.connect("clicked", lambda *_a: self.close())
             tv.add_bottom_bar(self.close_b)
             self.set_content(tv)
-            self.connect("close-request", lambda *_: (on_done(), False)[1])
+            self.connect("close-request", lambda *_a: (on_done(), False)[1])
 
             def work():
                 try:
@@ -149,8 +150,8 @@ def main_gui():
                 except OSError as e:
                     GLib.idle_add(self.add, f"{e}\n")
                     code = 1
-                msg = {0: "", 126: "\nОтказано: паролата не беше въведена.\n", 127: "\nОтказано: паролата не беше въведена.\n"}.get(
-                    code, f"\nСпря с грешка (код {code}). Старите настройки са непокътнати или се връщат с „↶ Върни както беше“.\n")
+                msg = {0: "", 126: _("\nОтказано: паролата не беше въведена.\n"), 127: _("\nОтказано: паролата не беше въведена.\n")}.get(
+                    code, _(f"\nСпря с грешка (код {code}). Старите настройки са непокътнати или се връщат с „↶ Върни както беше“.\n"))
                 GLib.idle_add(self.add, msg)
                 GLib.idle_add(self.close_b.set_sensitive, True)
             threading.Thread(target=work, daemon=True).start()
@@ -163,57 +164,57 @@ def main_gui():
     class CustomDlg(Adw.Window):
         """„Моя анимация“: GIF, видео или картинка -> тема за Plymouth (готовите файлове са в /tmp, root не трябва)."""
         def __init__(self, parent, on_ok):
-            super().__init__(transient_for=parent, modal=True, title="Моя анимация", default_width=620, default_height=720)
+            super().__init__(transient_for=parent, modal=True, title=_("Моя анимация"), default_width=620, default_height=720)
             self.on_ok, self.src, self.result = on_ok, "", None
             tv = Adw.ToolbarView()
             hb = Adw.HeaderBar()
-            self.ok = Gtk.Button(label="Добави", css_classes=["suggested-action"], sensitive=False)
+            self.ok = Gtk.Button(label=_("Добави"), css_classes=["suggested-action"], sensitive=False)
             self.ok.connect("clicked", self.add)
             hb.pack_end(self.ok)
             tv.add_top_bar(hb)
             page = Adw.PreferencesPage()
             self.ekran = Ekran(520, 292)
-            g0 = Adw.PreferencesGroup(title="Как ще изглежда", description="Избери файл. Прегледът се прави на компютъра ти, нищо не се пипа.")
+            g0 = Adw.PreferencesGroup(title=_("Как ще изглежда"), description=_("Избери файл. Прегледът се прави на компютъра ти, нищо не се пипа."))
             g0.add(self.ekran)
             self.status = Gtk.Label(xalign=0, wrap=True, css_classes=["dim-label"], margin_top=6)
             g0.add(self.status)
             page.add(g0)
-            g = Adw.PreferencesGroup(title="Анимация")
-            self.file_row = Adw.ActionRow(title="Файл", subtitle="GIF, видео (MP4, WebM) или картинка/лого (PNG, JPG)")
-            b = Gtk.Button(label="Избери…", valign=Gtk.Align.CENTER)
+            g = Adw.PreferencesGroup(title=_("Анимация"))
+            self.file_row = Adw.ActionRow(title=_("Файл"), subtitle=_("GIF, видео (MP4, WebM) или картинка/лого (PNG, JPG)"))
+            b = Gtk.Button(label=_("Избери…"), valign=Gtk.Align.CENTER)
             b.connect("clicked", self.pick)
             self.file_row.add_suffix(b)
             g.add(self.file_row)
-            self.title = Adw.EntryRow(title="Име на темата", text="Моята анимация")
+            self.title = Adw.EntryRow(title=_("Име на темата"), text=_("Моята анимация"))
             g.add(self.title)
-            self.label = Adw.EntryRow(title="Надпис под анимацията (по желание)", text="")
+            self.label = Adw.EntryRow(title=_("Надпис под анимацията (по желание)"), text="")
             g.add(self.label)
-            cr = Adw.ActionRow(title="Цвят на фона")
+            cr = Adw.ActionRow(title=_("Цвят на фона"))
             self.color = Gtk.ColorDialogButton(dialog=Gtk.ColorDialog(), valign=Gtk.Align.CENTER)
             c = Gdk.RGBA(); c.parse("#000000"); self.color.set_rgba(c)
             cr.add_suffix(self.color)
             g.add(cr)
-            self.size = Adw.SpinRow.new_with_range(10, 70, 5); self.size.set_title("Големина, % от екрана"); self.size.set_value(30)
+            self.size = Adw.SpinRow.new_with_range(10, 70, 5); self.size.set_title(_("Големина, % от екрана")); self.size.set_value(30)
             g.add(self.size)
-            self.fps = Adw.SpinRow.new_with_range(5, 30, 1); self.fps.set_title("Скорост, кадъра в секунда"); self.fps.set_value(20)
+            self.fps = Adw.SpinRow.new_with_range(5, 30, 1); self.fps.set_title(_("Скорост, кадъра в секунда")); self.fps.set_value(20)
             g.add(self.fps)
-            self.ind = Adw.ComboRow(title="Отдолу", subtitle="Повтарящите се не зависят от това колко бързо зарежда компютърът",
+            self.ind = Adw.ComboRow(title=_("Отдолу"), subtitle=_("Повтарящите се не зависят от това колко бързо зарежда компютърът"),
                                     model=Gtk.StringList.new([x[1] for x in J.INDIKATORI]))
             g.add(self.ind)
             page.add(g)
             g2 = Adw.PreferencesGroup()
-            self.make_b = Gtk.Button(label="Направи прегледа", css_classes=["pill"], halign=Gtk.Align.CENTER, sensitive=False)
+            self.make_b = Gtk.Button(label=_("Направи прегледа"), css_classes=["pill"], halign=Gtk.Align.CENTER, sensitive=False)
             self.make_b.connect("clicked", self.make)
             g2.add(self.make_b)
             page.add(g2)
             tv.set_content(page)
             self.set_content(tv)
             self.timer = GLib.timeout_add(1000 // 20, lambda: (self.ekran.tick(), True)[1])
-            self.connect("close-request", lambda *_: (GLib.source_remove(self.timer), False)[1])
+            self.connect("close-request", lambda *_a: (GLib.source_remove(self.timer), False)[1])
 
-        def pick(self, *_):
-            d = Gtk.FileDialog(title="Избери анимация")
-            f = Gtk.FileFilter(); f.set_name("Анимации и картинки")
+        def pick(self, *_a):
+            d = Gtk.FileDialog(title=_("Избери анимация"))
+            f = Gtk.FileFilter(); f.set_name(_("Анимации и картинки"))
             for p in ("*.gif", "*.mp4", "*.webm", "*.mkv", "*.mov", "*.png", "*.jpg", "*.jpeg", "*.webp", "*.GIF", "*.MP4", "*.PNG", "*.JPG"):
                 f.add_pattern(p)
             fl = Gio.ListStore.new(Gtk.FileFilter); fl.append(f)
@@ -233,7 +234,7 @@ def main_gui():
                 except Exception:
                     pass
                 base = os.path.splitext(os.path.basename(self.src))[0]
-                if self.title.get_text() in ("", "Моята анимация"):
+                if self.title.get_text() in ("", _("Моята анимация")):
                     self.title.set_text(base[:30])
                 self.make_b.set_sensitive(True)
                 self.make()
@@ -241,16 +242,16 @@ def main_gui():
 
         def custom(self):
             c = self.color.get_rgba()
-            return J.Custom(title=self.title.get_text().strip() or "Моята анимация", src=self.src,
+            return J.Custom(title=self.title.get_text().strip() or _("Моята анимация"), src=self.src,
                             bg=(int(c.red * 255), int(c.green * 255), int(c.blue * 255)), scale=self.size.get_value() / 100,
                             fps=self.fps.get_value(), label=self.label.get_text(), indicator=J.INDIKATORI[self.ind.get_selected()][0])
 
-        def make(self, *_):
+        def make(self, *_a):
             if not self.src:
                 return
             c = self.custom()
             self.make_b.set_sensitive(False); self.ok.set_sensitive(False)
-            self.status.set_label("Правя кадрите…")
+            self.status.set_label(_("Правя кадрите…"))
 
             def work():
                 try:
@@ -270,30 +271,30 @@ def main_gui():
             import glob as _g
             self.ekran.set_color(c.bg)
             self.ekran.load(sorted(_g.glob(d + "/frame-*.png"), key=J._num))
-            self.status.set_label(f"{n} кадъра, {size // 1024} KB. Темата ще се казва „boot-marka-{slug}“."
-                                  + (" Внимание: голяма е, зареждането може да стане по-бавно." if size > 15 * 1048576 else ""))
+            self.status.set_label(_(f"{n} кадъра, {size // 1024} KB. Темата ще се казва „boot-marka-{slug}“.")
+                                  + (_(" Внимание: голяма е, зареждането може да стане по-бавно.") if size > 15 * 1048576 else ""))
             self.ok.set_sensitive(True)
             return False
 
-        def add(self, *_):
+        def add(self, *_a):
             if self.result:
                 self.on_ok(*self.result)
             self.close()
 
     class Win(Adw.ApplicationWindow):
         def __init__(self, app):
-            super().__init__(application=app, title="Зареждане (boot-marka)", default_width=980, default_height=760)
+            super().__init__(application=app, title=_("Зареждане (boot-marka)"), default_width=980, default_height=760)
             self.toasts = Adw.ToastOverlay()
             tv = Adw.ToolbarView()
             hb = Adw.HeaderBar()
             self.stack = Adw.ViewStack()
             sw = Adw.ViewSwitcher(stack=self.stack, policy=Adw.ViewSwitcherPolicy.WIDE)
             hb.set_title_widget(sw)
-            self.apply_b = Gtk.Button(label="Приложи", css_classes=["suggested-action"], sensitive=False,
-                                      tooltip_text="Записва избраното. Ще поиска паролата ти.")
+            self.apply_b = Gtk.Button(label=_("Приложи"), css_classes=["suggested-action"], sensitive=False,
+                                      tooltip_text=_("Записва избраното. Ще поиска паролата ти."))
             self.apply_b.connect("clicked", self.apply)
             hb.pack_end(self.apply_b)
-            self.undo_b = Gtk.Button(icon_name="edit-undo-symbolic", tooltip_text="↶ Върни както беше преди програмата")
+            self.undo_b = Gtk.Button(icon_name="edit-undo-symbolic", tooltip_text=_("↶ Върни както беше преди програмата"))
             self.undo_b.connect("clicked", self.undo)
             hb.pack_start(self.undo_b)
             tv.add_top_bar(hb)
@@ -323,27 +324,27 @@ def main_gui():
                 if ch:
                     self.stack.remove(ch)
             self.ekrani = []
-            self.stack.add_titled_with_icon(self.page_anim(), "anim", "Анимация", "applications-graphics-symbolic")
-            self.stack.add_titled_with_icon(self.page_tekst(), "tekst", "Текст при зареждане", "utilities-terminal-symbolic")
+            self.stack.add_titled_with_icon(self.page_anim(), "anim", _("Анимация"), "applications-graphics-symbolic")
+            self.stack.add_titled_with_icon(self.page_tekst(), "tekst", _("Текст при зареждане"), "utilities-terminal-symbolic")
             self.stack.add_titled_with_icon(self.page_grub(), "grub", "GRUB", "system-run-symbolic")
             self.undo_b.set_sensitive(bool(J.history()))
             self.changed()
 
-        def changed(self, *_):
+        def changed(self, *_a):
             ch = []
             if self.new_theme:
-                ch.append(f"нова тема „{self.new_theme[2].title}“")
+                ch.append(_(f"нова тема „{self.new_theme[2].title}“"))
             if self.sel_theme != self.s.theme:
-                ch.append(f"анимация: {self.s.theme or '—'} → {self.sel_theme}")
+                ch.append(_(f"анимация: {self.s.theme or '—'} → {self.sel_theme}"))
             if self.sel_mode != self.s.mode:
-                ch.append(f"текст: {J.MODES[self.s.mode][0]} → {J.MODES[self.sel_mode][0]}")
+                ch.append(_(f"текст: {J.MODES[self.s.mode][0]} → {J.MODES[self.sel_mode][0]}"))
             if self.grub_changed():
                 ch.append("GRUB")
             if self.nvidia:
-                ch.append("поправка за NVIDIA")
+                ch.append(_("поправка за NVIDIA"))
             self.apply_b.set_sensitive(bool(ch))
-            self.summary.set_label(("Ще се промени: " + "; ".join(ch) + ". Вижда се при следващото рестартиране.") if ch else
-                                   "Избери как да изглежда зареждането и натисни „Приложи“. Нищо не се записва преди това.")
+            self.summary.set_label((_("Ще се промени: ") + "; ".join(ch) + _(". Вижда се при следващото рестартиране.")) if ch else
+                                   _("Избери как да изглежда зареждането и натисни „Приложи“. Нищо не се записва преди това."))
             if hasattr(self, "line_l"):
                 self.line_l.set_label(J.build_cmdline(self.s.grub_base.get("GRUB_CMDLINE_LINUX_DEFAULT", ""), self.sel_mode)
                                       + (" nvidia-drm.modeset=1" if self.nvidia else ""))
@@ -358,18 +359,18 @@ def main_gui():
             box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, margin_top=12, margin_bottom=12, margin_start=16, margin_end=16)
             if self.s.nvidia:
                 box.append(Adw.Banner(title=self.s.nvidia, revealed=True))
-            box.append(Gtk.Label(label="Избери анимацията, която се вижда, докато Linux зарежда. Миниатюрите са живи.", xalign=0, wrap=True, css_classes=["dim-label"]))
+            box.append(Gtk.Label(label=_("Избери анимацията, която се вижда, докато Linux зарежда. Миниатюрите са живи."), xalign=0, wrap=True, css_classes=["dim-label"]))
             self.flow = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, homogeneous=True, max_children_per_line=8, min_children_per_line=1,
                                     row_spacing=12, column_spacing=12, valign=Gtk.Align.START)
             self.cards = {}
-            plus = Gtk.Button(css_classes=["card", "card-tema"], tooltip_text="Направи тема от свой GIF, видео или лого")
+            plus = Gtk.Button(css_classes=["card", "card-tema"], tooltip_text=_("Направи тема от свой GIF, видео или лого"))
             v = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
             e = Ekran(plus=True)
             v.append(e)
-            v.append(Gtk.Label(label="Моя анимация", css_classes=["tema-ime"]))
-            v.append(Gtk.Label(label="от GIF, видео или лого", css_classes=["dim-label", "caption"]))
+            v.append(Gtk.Label(label=_("Моя анимация"), css_classes=["tema-ime"]))
+            v.append(Gtk.Label(label=_("от GIF, видео или лого"), css_classes=["dim-label", "caption"]))
             plus.set_child(v)
-            plus.connect("clicked", lambda *_: CustomDlg(self, self.custom_added).present())
+            plus.connect("clicked", lambda *_a: CustomDlg(self, self.custom_added).present())
             self.flow.append(plus)
             for t in self.s.themes:
                 self.flow.append(self.card(t))
@@ -379,7 +380,7 @@ def main_gui():
         def card(self, t, new=False):
             b = Gtk.Button(css_classes=["card", "card-tema"])
             v = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-            e = Ekran(note="логото на производителя" if t.name == "bgrt" else "")
+            e = Ekran(note=_("логото на производителя") if t.name == "bgrt" else "")
             if t.ours or new:
                 e.set_color(t.bg_color)
             e.load(t.frames, t.background)
@@ -387,16 +388,16 @@ def main_gui():
             v.append(e)
             h = Gtk.Box(spacing=6, halign=Gtk.Align.CENTER)
             nice = t.title if t.ours else t.name.replace("-", " ").replace("_", " ").title()
-            h.append(Gtk.Label(label=nice + (" (само текст)" if t.name in J.SKIP else ""), css_classes=["tema-ime"], ellipsize=3, max_width_chars=20))
+            h.append(Gtk.Label(label=nice + (_(" (само текст)") if t.name in J.SKIP else ""), css_classes=["tema-ime"], ellipsize=3, max_width_chars=20))
             if t.name == self.s.theme:
-                h.append(Gtk.Label(label="сега", css_classes=["sega"]))
+                h.append(Gtk.Label(label=_("сега"), css_classes=["sega"]))
             if new:
-                h.append(Gtk.Label(label="нова", css_classes=["nova"]))
+                h.append(Gtk.Label(label=_("нова"), css_classes=["nova"]))
             v.append(h)
             v.append(Gtk.Label(label=(t.name if t.ours else t.title), css_classes=["dim-label", "caption"], ellipsize=3, max_width_chars=30,
                                tooltip_text=f"{t.title}\n{t.name}"))
             b.set_child(v)
-            b.connect("clicked", lambda *_: self.pick_theme(t.name))
+            b.connect("clicked", lambda *_a: self.pick_theme(t.name))
             self.cards[t.name] = b
             if t.name == self.sel_theme:
                 b.add_css_class("izbrana")
@@ -407,7 +408,7 @@ def main_gui():
             for n, b in self.cards.items():
                 (b.add_css_class if n == name else b.remove_css_class)("izbrana")
             if self.sel_mode == "podroben" and name not in J.SKIP:
-                self.toasts.add_toast(Adw.Toast(title="Анимацията се вижда само в режим „Тих“ или „Нормален“ (страница „Текст при зареждане“)."))
+                self.toasts.add_toast(Adw.Toast(title=_("Анимацията се вижда само в режим „Тих“ или „Нормален“ (страница „Текст при зареждане“).")))
             self.changed()
 
         def custom_added(self, d, slug, c):
@@ -426,10 +427,10 @@ def main_gui():
         # ---------------------------------------------------------------- страница „Текст при зареждане“
         def page_tekst(self):
             page = Adw.PreferencesPage()
-            g = Adw.PreferencesGroup(title="Какво се вижда, докато Linux зарежда",
-                                     description="Сега е: " + J.MODES[self.s.mode][0] + ". Основният файл на GRUB не се пипа.")
+            g = Adw.PreferencesGroup(title=_("Какво се вижда, докато Linux зарежда"),
+                                     description=_("Сега е: ") + J.MODES[self.s.mode][0] + _(". Основният файл на GRUB не се пипа."))
             self.mode_checks, first = {}, None
-            for key, (title, sub, _) in J.MODES.items():
+            for key, (title, sub, _t) in J.MODES.items():
                 r = Adw.ActionRow(title=title, subtitle=sub)
                 c = Gtk.CheckButton(active=key == self.sel_mode, valign=Gtk.Align.CENTER)
                 if first:
@@ -443,16 +444,16 @@ def main_gui():
             page.add(g)
             if self.s.nvidia:
                 g2 = Adw.PreferencesGroup(title="NVIDIA")
-                sw = Adw.SwitchRow(title="Поправка за NVIDIA", subtitle="Добавя nvidia-drm.modeset=1, за да се вижда анимацията")
+                sw = Adw.SwitchRow(title=_("Поправка за NVIDIA"), subtitle=_("Добавя nvidia-drm.modeset=1, за да се вижда анимацията"))
                 sw.connect("notify::active", lambda r, *_: (setattr(self, "nvidia", r.get_active()), self.changed()))
                 g2.add(sw)
                 page.add(g2)
-            g3 = Adw.PreferencesGroup(title="Редът на ядрото след „Приложи“",
-                                      description="Нашите настройки се сменят, всичко друго (напр. за видеокартата) остава.")
+            g3 = Adw.PreferencesGroup(title=_("Редът на ядрото след „Приложи“"),
+                                      description=_("Нашите настройки се сменят, всичко друго (напр. за видеокартата) остава."))
             self.line_l = Gtk.Label(xalign=0, wrap=True, selectable=True, css_classes=["red-iadro"])
             g3.add(self.line_l)
             if self.s.crypt:
-                g3.add(Gtk.Label(label="Дискът е криптиран: паролата се пита върху анимацията.", xalign=0, css_classes=["dim-label"], margin_top=6))
+                g3.add(Gtk.Label(label=_("Дискът е криптиран: паролата се пита върху анимацията."), xalign=0, css_classes=["dim-label"], margin_top=6))
             page.add(g3)
             return page
 
@@ -463,32 +464,32 @@ def main_gui():
         # ---------------------------------------------------------------- страница „GRUB“
         def page_grub(self):
             page = Adw.PreferencesPage()
-            g = Adw.PreferencesGroup(title="Менюто при включване (GRUB)")
-            st = Adw.ComboRow(title="Меню", model=Gtk.StringList.new([s[1] for s in STYLES]))
+            g = Adw.PreferencesGroup(title=_("Менюто при включване (GRUB)"))
+            st = Adw.ComboRow(title=_("Меню"), model=Gtk.StringList.new([s[1] for s in STYLES]))
             st.set_selected([s[0] for s in STYLES].index(self.gp.style))
             st.connect("notify::selected", lambda r, *_: (setattr(self.gp, "style", STYLES[r.get_selected()][0]), self.changed()))
             g.add(st)
             to = Adw.SpinRow.new_with_range(0, 30, 1)
-            to.set_title("Колко секунди да чака")
-            to.set_subtitle("0 = направо, без чакане")
+            to.set_title(_("Колко секунди да чака"))
+            to.set_subtitle(_("0 = направо, без чакане"))
             to.set_value(self.gp.timeout)
             to.connect("notify::value", lambda r, *_: (setattr(self.gp, "timeout", int(r.get_value())), self.changed()))
             g.add(to)
-            rem = Adw.SwitchRow(title="Помни последния избор", subtitle="Ако имаш и друга система (напр. Windows), стартира последно избраната", active=self.gp.remember)
+            rem = Adw.SwitchRow(title=_("Помни последния избор"), subtitle=_("Ако имаш и друга система (напр. Windows), стартира последно избраната"), active=self.gp.remember)
             rem.connect("notify::active", lambda r, *_: (setattr(self.gp, "remember", r.get_active()), self.changed()))
             g.add(rem)
-            gfx = Adw.ComboRow(title="Разделителна способност на менюто", model=Gtk.StringList.new(["автоматично" if x == "auto" else x for x in GFXS]))
+            gfx = Adw.ComboRow(title=_("Разделителна способност на менюто"), model=Gtk.StringList.new([_("автоматично") if x == "auto" else x for x in GFXS]))
             gfx.set_selected(GFXS.index(self.gp.gfx) if self.gp.gfx in GFXS else 0)
             gfx.connect("notify::selected", lambda r, *_: (setattr(self.gp, "gfx", GFXS[r.get_selected()]), self.changed()))
             g.add(gfx)
             page.add(g)
-            g2 = Adw.PreferencesGroup(title="Фон на менюто",
-                                      description=("⚠ В GRUB има тема (GRUB_THEME) и тя покрива фона." if self.s.grub.get("GRUB_THEME") else
-                                                   "Картинка зад менюто на GRUB. Вижда се, ако менюто не е скрито."))
-            self.bg_row = Adw.ActionRow(title="Картинка", subtitle=os.path.basename(self.s.grub.get("GRUB_BACKGROUND", "")) or "няма")
-            pick = Gtk.Button(label="Избери…", valign=Gtk.Align.CENTER)
+            g2 = Adw.PreferencesGroup(title=_("Фон на менюто"),
+                                      description=(_("⚠ В GRUB има тема (GRUB_THEME) и тя покрива фона.") if self.s.grub.get("GRUB_THEME") else
+                                                   _("Картинка зад менюто на GRUB. Вижда се, ако менюто не е скрито.")))
+            self.bg_row = Adw.ActionRow(title=_("Картинка"), subtitle=os.path.basename(self.s.grub.get("GRUB_BACKGROUND", "")) or _("няма"))
+            pick = Gtk.Button(label=_("Избери…"), valign=Gtk.Align.CENTER)
             pick.connect("clicked", self.pick_bg)
-            rm = Gtk.Button(icon_name="user-trash-symbolic", valign=Gtk.Align.CENTER, tooltip_text="Без картинка")
+            rm = Gtk.Button(icon_name="user-trash-symbolic", valign=Gtk.Align.CENTER, tooltip_text=_("Без картинка"))
             rm.connect("clicked", self.no_bg)
             self.bg_row.add_suffix(pick)
             self.bg_row.add_suffix(rm)
@@ -496,9 +497,9 @@ def main_gui():
             page.add(g2)
             return page
 
-        def pick_bg(self, *_):
-            d = Gtk.FileDialog(title="Картинка за фона на GRUB")
-            f = Gtk.FileFilter(); f.set_name("Картинки"); f.add_mime_type("image/*")
+        def pick_bg(self, *_a):
+            d = Gtk.FileDialog(title=_("Картинка за фона на GRUB"))
+            f = Gtk.FileFilter(); f.set_name(_("Картинки")); f.add_mime_type("image/*")
             fl = Gio.ListStore.new(Gtk.FileFilter); fl.append(f); d.set_filters(fl)
 
             def done(dd, res):
@@ -510,35 +511,35 @@ def main_gui():
                     out = os.path.join(tempfile.mkdtemp(prefix="boot-marka-fon-"), "fon.png")
                     im.save(out)
                 except Exception as e:
-                    self.toasts.add_toast(Adw.Toast(title=f"Не мога да отворя картинката: {e}"))
+                    self.toasts.add_toast(Adw.Toast(title=_(f"Не мога да отворя картинката: {e}")))
                     return
                 self.bg_src, self.gp.background = out, out
                 self.bg_row.set_subtitle(os.path.basename(path))
                 self.changed()
             d.open(self, None, done)
 
-        def no_bg(self, *_):
+        def no_bg(self, *_a):
             self.bg_src, self.gp.background = None, ""
-            self.bg_row.set_subtitle("няма (ще се махне)")
+            self.bg_row.set_subtitle(_("няма (ще се махне)"))
             self.changed()
 
         # ---------------------------------------------------------------- прилагане
-        def apply(self, *_):
+        def apply(self, *_a):
             nt = self.new_theme
             theme = self.sel_theme if (self.sel_theme != self.s.theme or (nt and self.sel_theme == J.PREFIX + nt[1])) else None
             mode = self.sel_mode if self.sel_mode != self.s.mode else None
             gp = self.gp if (self.grub_changed() or mode or self.nvidia) else None
             cmd = J.apply_command(HELPER, theme=theme, mode=mode, gp=gp, bg_src=self.bg_src,
                                   new_theme_dir=nt[0] if nt else None, new_slug=nt[1] if nt else None, nvidia=self.nvidia)
-            LogWin(self, cmd, "Прилагам", self.load).present()
+            LogWin(self, cmd, _("Прилагам"), self.load).present()
 
-        def undo(self, *_):
-            d = Adw.AlertDialog(heading="Да върна ли всичко както беше?",
-                                body="Маха настройките и темите, сложени от програмата, и връща старата анимация. Ще поиска паролата ти.")
+        def undo(self, *_a):
+            d = Adw.AlertDialog(heading=_("Да върна ли всичко както беше?"),
+                                body=_("Маха настройките и темите, сложени от програмата, и връща старата анимация. Ще поиска паролата ти."))
             d.add_response("ne", "Не")
-            d.add_response("da", "Върни")
+            d.add_response("da", _("Върни"))
             d.set_response_appearance("da", Adw.ResponseAppearance.DESTRUCTIVE)
-            d.connect("response", lambda _d, r: r == "da" and LogWin(self, J.reset_command(HELPER), "Връщам както беше", self.load).present())
+            d.connect("response", lambda _d, r: r == "da" and LogWin(self, J.reset_command(HELPER), _("Връщам както беше"), self.load).present())
             d.present(self)
 
     class App(Adw.Application):

@@ -10,7 +10,11 @@ import subprocess
 import tempfile
 from dataclasses import dataclass, field
 
-VERSION = "0.4.0"
+import sys as _sys
+_sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+from ezik import _
+
+VERSION = "0.5.0"
 ROOT = os.environ.get("BOOT_MARKA_ROOT", "")            # за тестовете: пясъчник вместо /
 THEMES = ROOT + "/usr/share/plymouth/themes"
 GRUB_MAIN = ROOT + "/etc/default/grub"
@@ -27,11 +31,11 @@ GFX = re.compile(r"^(auto|[0-9]{3,4}x[0-9]{3,4}(x[0-9]{2})?)$")
 MANAGED = re.compile(r"^(quiet|splash|nosplash|loglevel=\S*|udev\.log_level=\S*|rd\.udev\.log_level=\S*|"
                      r"systemd\.show_status=\S*|rd\.systemd\.show_status=\S*|vt\.global_cursor_default=\S*|plymouth\.enable=\S*)$")
 MODES = {
-    "tih": ("Тих", "Само анимацията. Без съобщения на ядрото и без мигащ курсор. Esc ги показва, ако потрябват.",
+    "tih": (_("Тих"), _("Само анимацията. Без съобщения на ядрото и без мигащ курсор. Esc ги показва, ако потрябват."),
             ["quiet", "splash", "loglevel=3", "udev.log_level=3", "rd.udev.log_level=3",
              "systemd.show_status=false", "rd.systemd.show_status=false", "vt.global_cursor_default=0"]),
-    "normalen": ("Нормален", "Анимация, но важните съобщения на системата може да се мярнат.", ["quiet", "splash"]),
-    "podroben": ("Подробен", "Без анимация, всичко се изписва. За когато нещо не тръгва.", []),
+    "normalen": (_("Нормален"), _("Анимация, но важните съобщения на системата може да се мярнат."), ["quiet", "splash"]),
+    "podroben": (_("Подробен"), _("Без анимация, всичко се изписва. За когато нещо не тръгва."), []),
 }
 
 
@@ -99,13 +103,13 @@ def grub_from_settings(g):
 
 def dropin_text(cmdline, gp, bg_final=None):
     """Съдържанието на /etc/default/grub.d/99-boot-marka.cfg. Основният /etc/default/grub не се пипа."""
-    L = ["# boot-marka: настройките на зареждането, направени с програмата „Зареждане (boot-marka)“.",
-         "# Основният /etc/default/grub не е пипан. За да се върне старото: изтрий този файл и пусни sudo update-grub",
-         "# (или в програмата: ↶ Върни както беше).",
+    L = [_("# boot-marka: настройките на зареждането, направени с програмата „Зареждане (boot-marka)“."),
+         _("# Основният /etc/default/grub не е пипан. За да се върне старото: изтрий този файл и пусни sudo update-grub"),
+         _("# (или в програмата: ↶ Върни както беше)."),
          f"GRUB_CMDLINE_LINUX_DEFAULT={shlex.quote(cmdline)}",
          f"GRUB_TIMEOUT={int(gp.timeout)}",
          f"GRUB_TIMEOUT_STYLE={gp.style}",
-         "unset GRUB_HIDDEN_TIMEOUT GRUB_HIDDEN_TIMEOUT_QUIET   # остарели настройки; заменени от GRUB_TIMEOUT_STYLE"]
+         _("unset GRUB_HIDDEN_TIMEOUT GRUB_HIDDEN_TIMEOUT_QUIET   # остарели настройки; заменени от GRUB_TIMEOUT_STYLE")]
     if gp.remember:
         L += ["GRUB_DEFAULT=saved", "GRUB_SAVEDEFAULT=true"]
     if gp.gfx and gp.gfx != "auto":
@@ -216,8 +220,8 @@ def nvidia_note():
         v = ""
     if v == "Y":
         return ""
-    return ("Видеокартата NVIDIA е без „modeset“. Ако екранът е вързан към нея, анимацията може да не се покаже. "
-            "Отметни „Поправка за NVIDIA“, за да добавя nvidia-drm.modeset=1.")
+    return (_("Видеокартата NVIDIA е без „modeset“. Ако екранът е вързан към нея, анимацията може да не се покаже. "
+            "Отметни „Поправка за NVIDIA“, за да добавя nvidia-drm.modeset=1."))
 
 
 def encrypted():
@@ -345,11 +349,11 @@ Plymouth.SetBootProgressFunction(progress_callback);"""
 
 
 # ---------------------------------------------------------------- какво има под анимацията (повтарящо се, не зависи от времето)
-INDIKATORI = [("trikolor", "Трикольор: една лента блещука отляво надясно, с искра"),
-              ("zname", "Знаме: три ивици се пълнят на място, с искри"),
-              ("begashta", "Бягаща светлинка (повтаря се)"), ("tochki", "Три пулсиращи точки"),
-              ("nadpis", "Надпис „Зареждане…“, който свети и угасва"), ("lenta", "Лента за напредъка (може да не стигне до края)"),
-              ("nyama", "Нищо")]
+INDIKATORI = [("trikolor", _("Трикольор: една лента блещука отляво надясно, с искра")),
+              ("zname", _("Знаме: три ивици се пълнят на място, с искри")),
+              ("begashta", _("Бягаща светлинка (повтаря се)")), ("tochki", _("Три пулсиращи точки")),
+              ("nadpis", _("Надпис „Зареждане…“, който свети и угасва")), ("lenta", _("Лента за напредъка (може да не стигне до края)")),
+              ("nyama", _("Нищо"))]
 ZNAME_SETUP = """tb = Image("b-bial.png");
 tz = Image("b-zelen.png");
 tc = Image("b-cherven.png");
@@ -549,11 +553,11 @@ def make_custom(c, workdir=None, log=print):
         else f"scale=-2:{px}:flags=lanczos"
     cmd = ["ffmpeg", "-v", "error", "-y", "-i", c.src, "-vf", vf, "-frames:v", str(int(c.max_frames)),
            "-start_number", "1", os.path.join(d, "frame-%d.png")]
-    log("Правя кадрите…")
+    log(_("Правя кадрите…"))
     r = subprocess.run(cmd, capture_output=True, text=True)
     frames = sorted(glob.glob(os.path.join(d, "frame-*.png")), key=_num)
     if r.returncode != 0 or not frames:
-        raise RuntimeError("Не можах да извадя кадри от файла. " + (r.stderr.strip()[-300:] if r.stderr else ""))
+        raise RuntimeError(_("Не можах да извадя кадри от файла. ") + (r.stderr.strip()[-300:] if r.stderr else ""))
     n = len(frames)
     if n == 1:                                  # снимка или лого: „диша“ — същият кадър, без анимация
         pass
@@ -589,9 +593,9 @@ def make_custom(c, workdir=None, log=print):
         dot.save(os.path.join(d, "dot.png"))
     if c.indicator == "nadpis":
         f2 = shrift(44)
-        tw = int(ImageDraw.Draw(Image.new("RGB", (1, 1))).textlength("Зареждане…", font=f2)) + 20
+        tw = int(ImageDraw.Draw(Image.new("RGB", (1, 1))).textlength(_("Зареждане…"), font=f2)) + 20
         z = Image.new("RGBA", (tw, 66), (0, 0, 0, 0))
-        ImageDraw.Draw(z).text((10, 6), "Зареждане…", font=f2, fill=(*c.label_color, 255))
+        ImageDraw.Draw(z).text((10, 6), _("Зареждане…"), font=f2, fill=(*c.label_color, 255))
         z.save(os.path.join(d, "zarezhdane.png"))
     label = ""
     if c.label.strip():
@@ -611,11 +615,11 @@ def make_custom(c, workdir=None, log=print):
     open(os.path.join(d, name + ".script"), "w", encoding="utf-8").write(script)
     final = f"/usr/share/plymouth/themes/{name}"
     open(os.path.join(d, name + ".plymouth"), "w", encoding="utf-8").write(
-        "[Plymouth Theme]\n"
+        _("[Plymouth Theme]\n"
         f"Name=boot-marka: {c.title}\n"
         "Description=Собствена анимация, направена с boot-marka\n"
         "ModuleName=script\n\n[script]\n"
-        f"ImageDir={final}\nScriptFile={final}/{name}.script\n")
+        f"ImageDir={final}\nScriptFile={final}/{name}.script\n"))
     json.dump({"title": c.title, "bg": list(c.bg), "src": os.path.basename(c.src), "frames": n},
               open(os.path.join(d, "boot-marka.json"), "w"), ensure_ascii=False)
     size = sum(os.path.getsize(f) for f in glob.glob(os.path.join(d, "*")))
@@ -623,8 +627,13 @@ def make_custom(c, workdir=None, log=print):
 
 
 # ---------------------------------------------------------------- команда за помощника
+def _ez():
+    import ezik
+    return ["--ezik", ezik.ezik()]
+
+
 def apply_command(helper, theme=None, mode=None, gp=None, bg_src=None, new_theme_dir=None, new_slug=None, nvidia=False):
-    cmd = ["pkexec", "/usr/bin/python3", "-I", helper]
+    cmd = ["pkexec", "/usr/bin/python3", "-I", helper] + _ez()
     if new_theme_dir:
         cmd += ["--nova-tema", new_theme_dir, new_slug]
     if theme:
@@ -644,19 +653,19 @@ def apply_command(helper, theme=None, mode=None, gp=None, bg_src=None, new_theme
 
 
 def reset_command(helper):
-    return ["pkexec", "/usr/bin/python3", "-I", helper, "--varni"]
+    return ["pkexec", "/usr/bin/python3", "-I", helper] + _ez() + ["--varni"]
 
 
 def as_text(s):
     L = [f"boot-marka {VERSION}",
-         f"Анимация (Plymouth): {s.theme or 'няма'}",
-         f"Текст при зареждане: {MODES[s.mode][0]}",
-         f"GRUB: {s.plan.timeout} с, меню: {s.plan.style}, помни последния избор: {'да' if s.plan.remember else 'не'}, "
-         f"разделителна способност: {s.plan.gfx}",
-         f"Ред на ядрото (настроен): {s.grub.get('GRUB_CMDLINE_LINUX_DEFAULT', '')}",
-         f"Ред на ядрото (сега): {s.cmdline_now}",
-         f"Настройки от boot-marka: {'да' if s.ours else 'не'}"]
+         _(f"Анимация (Plymouth): {s.theme or 'няма'}"),
+         _(f"Текст при зареждане: {MODES[s.mode][0]}"),
+         _(f"GRUB: {s.plan.timeout} с, меню: {s.plan.style}, помни последния избор: {'да' if s.plan.remember else 'не'}, "
+         f"разделителна способност: {s.plan.gfx}"),
+         _(f"Ред на ядрото (настроен): {s.grub.get('GRUB_CMDLINE_LINUX_DEFAULT', '')}"),
+         _(f"Ред на ядрото (сега): {s.cmdline_now}"),
+         _(f"Настройки от boot-marka: {'да' if s.ours else 'не'}")]
     if s.nvidia:
         L.append("⚠ " + s.nvidia)
-    L.append("Теми: " + ", ".join(t.name for t in s.themes))
+    L.append(_("Теми: ") + ", ".join(t.name for t in s.themes))
     return "\n".join(L) + "\n"

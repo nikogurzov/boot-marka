@@ -27,7 +27,7 @@
 ## Инсталиране
 Свали `.deb` от [Releases](https://github.com/nikogurzov/boot-marka/releases) и:
 ```
-sudo apt install ./boot-marka_0.4.0_all.deb
+sudo apt install ./boot-marka_*_all.deb
 ```
 В менюто я търси като **„Зареждане (boot-marka)“**.
 
@@ -50,6 +50,20 @@ python3 tools/pregled.py анимация.gif out.mp4 trikolor     видео п
 ```
 
 ## English
-boot-marka is a GTK 4 / libadwaita app for Debian. It shows a live gallery of Plymouth boot splash themes and turns your own GIF, video or logo into a theme. It can add a looping indicator under the animation (Bulgarian tricolor shimmer, filling flag, dots, text), choose a quiet, normal or verbose boot, and set GRUB options. Changes go to a separate GRUB drop-in, and everything can be undone with one click.
+boot-marka is a GTK 4 / libadwaita app for Debian that sets **how your computer looks while it boots**, without editing config files. **The interface is in English when your system is in English** (and in Bulgarian on a Bulgarian system; `BOOT_MARKA_EZIK=en` forces English).
 
-Лиценз: MIT. От семейството на [drv-marka](https://github.com/nikogurzov/drv-marka).
+- **Animation (Plymouth):** a gallery of all installed boot splash themes with **live thumbnails**, plus **“My animation”**: turn your own GIF, video or logo into a theme (background color picked automatically, size, speed, optional text).
+- **Below the animation:** looping indicators that don't pretend to know how long booting takes: a **tricolor shimmer**, a **filling flag**, a running light, pulsing dots or “Loading…” text. The classic progress bar is still there.
+- **Boot text:** Quiet (only the animation, no kernel messages, no blinking cursor), Normal, or Verbose. Your other kernel options stay untouched.
+- **GRUB:** hidden menu, countdown or menu; timeout; remember last choice; resolution; background picture.
+- **Safe:** nothing is written until you press “Apply” and enter your password; settings go to a separate `/etc/default/grub.d/99-boot-marka.cfg` (the main `/etc/default/grub` is never touched); the original state is saved; **↶ Undo everything** restores it.
+
+![The gallery in English](docs/en/anim.png)
+
+| Boot text | GRUB |
+|---|---|
+| ![](docs/en/tekst.png) | ![](docs/en/grub.png) |
+
+Install: download the `.deb` from [Releases](https://github.com/nikogurzov/boot-marka/releases) and run `sudo apt install ./boot-marka_*_all.deb`. Tested on Debian 13. If something looks wrong after a restart, open the app and press ↶. Bug reports are welcome in Issues.
+
+License: MIT. Sister project: [drv-marka](https://github.com/nikogurzov/drv-marka).

@@ -19,6 +19,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 import jezgro as J
+from ezik import _
 
 TEST = os.environ.get("BOOT_MARKA_TEST") == "1" and bool(J.ROOT)     # пясъчник за тестовете: не пуска системни команди
 BACKUPS = J.ROOT + "/var/backups/boot-marka"
@@ -34,7 +35,7 @@ def say(s):
 
 
 def die(s):
-    say("ГРЕШКА: " + s)
+    say(_("ГРЕШКА: ") + s)
     sys.exit(2)
 
 
@@ -60,21 +61,21 @@ def args(argv):
         elif k in ("--nvidia", "--varni"):
             a[k] = True; i += 1
         else:
-            die(f"непознат аргумент: {k}")
+            die(_(f"непознат аргумент: {k}"))
     if "--tema" in a and not J.THEME.match(a["--tema"]):
-        die("неправилно име на тема")
+        die(_("неправилно име на тема"))
     if "--rezhim" in a and a["--rezhim"] not in J.MODES:
-        die("неправилен режим")
+        die(_("неправилен режим"))
     if "--grub-vreme" in a and not (a["--grub-vreme"].isdigit() and 0 <= int(a["--grub-vreme"]) <= 30):
-        die("времето на GRUB трябва да е от 0 до 30 секунди")
+        die(_("времето на GRUB трябва да е от 0 до 30 секунди"))
     if "--grub-stil" in a and a["--grub-stil"] not in ("hidden", "countdown", "menu"):
-        die("неправилен вид на менюто")
+        die(_("неправилен вид на менюто"))
     if "--grub-gfx" in a and not J.GFX.match(a["--grub-gfx"]):
-        die("неправилна разделителна способност")
+        die(_("неправилна разделителна способност"))
     if "--grub-pomni" in a and a["--grub-pomni"] not in ("0", "1"):
-        die("--grub-pomni е 0 или 1")
+        die(_("--grub-pomni е 0 или 1"))
     if "--nova-tema" in a and not J.SLUG.match(a["--nova-tema"][1]):
-        die("неправилно име на новата тема")
+        die(_("неправилно име на новата тема"))
     return a
 
 
@@ -91,7 +92,7 @@ def cur_theme():
 
 def set_theme(name):
     if not os.path.exists(f"{J.THEMES}/{name}/{name}.plymouth"):
-        die(f"няма такава тема: {name}")
+        die(_(f"няма такава тема: {name}"))
     if TEST:
         os.makedirs(os.path.dirname(PLY_CONF), exist_ok=True)
         open(PLY_CONF, "w").write(f"[Daemon]\nTheme={name}\n")
@@ -115,26 +116,26 @@ def install_theme(src, slug):
     """Копира готовата тема от потребителската папка след проверка на всеки файл."""
     name = J.PREFIX + slug
     if not os.path.isdir(src) or os.path.islink(src):
-        die("папката с новата тема липсва")
+        die(_("папката с новата тема липсва"))
     files = os.listdir(src)
     bad = [f for f in files if not ALLOWED.match(f) or os.path.islink(os.path.join(src, f)) or not os.path.isfile(os.path.join(src, f))]
     if bad:
-        die("непознати файлове в темата: " + ", ".join(bad[:5]))
+        die(_("непознати файлове в темата: ") + ", ".join(bad[:5]))
     for need in (f"{name}.plymouth", f"{name}.script", "frame-1.png"):
         if need not in files:
-            die(f"липсва {need}")
+            die(_(f"липсва {need}"))
     if any(f.endswith((".script", ".plymouth")) and not f.startswith(name + ".") for f in files):
-        die("файловете на темата са за друго име")
+        die(_("файловете на темата са за друго име"))
     pl = open(os.path.join(src, name + ".plymouth"), encoding="utf-8").read()
     final = f"/usr/share/plymouth/themes/{name}"
     if f"ImageDir={final}\n" not in pl or f"ScriptFile={final}/{name}.script" not in pl or "ModuleName=script" not in pl:
-        die("файлът .plymouth не е направен от програмата")
+        die(_("файлът .plymouth не е направен от програмата"))
     for f in files:
         if f.endswith(".png") and not png_ok(os.path.join(src, f)):
-            die(f"{f} не е правилна PNG картинка")
+            die(_(f"{f} не е правилна PNG картинка"))
     size = sum(os.path.getsize(os.path.join(src, f)) for f in files)
     if size > MAX_THEME:
-        die(f"темата е твърде голяма ({size // 1048576} MB, най-много {MAX_THEME // 1048576} MB)")
+        die(_(f"темата е твърде голяма ({size // 1048576} MB, най-много {MAX_THEME // 1048576} MB)"))
     dst = f"{J.THEMES}/{name}"
     if os.path.exists(dst):
         shutil.rmtree(dst)
@@ -142,7 +143,7 @@ def install_theme(src, slug):
     for f in files:
         shutil.copyfile(os.path.join(src, f), os.path.join(dst, f))
         os.chmod(os.path.join(dst, f), 0o644)
-    say(f"Темата е сложена: {dst} ({len(files)} файла, {size // 1024} KB)")
+    say(_(f"Темата е сложена: {dst} ({len(files)} файла, {size // 1024} KB)"))
     return name
 
 
@@ -172,7 +173,7 @@ def first_backup(h):
         shutil.copy2(J.DROPIN, os.path.join(d, os.path.basename(J.DROPIN)))
     h.append({"koga": time.strftime("%F %T"), "vid": "predi", "tema": cur_theme(), "dropin": os.path.exists(J.DROPIN),
               "fon": os.path.exists(J.ROOT + BG_FINAL)})
-    say("Пазя как е било преди програмата: " + d)
+    say(_("Пазя как е било преди програмата: ") + d)
 
 
 # ---------------------------------------------------------------- прилагане
@@ -191,9 +192,9 @@ def apply(a):
         old = cur_theme()
         if a["--tema"] != old:
             entry["tema_predi"] = old
-            say(f"Анимация: {old or '—'} → {a['--tema']}")
+            say(_(f"Анимация: {old or '—'} → {a['--tema']}"))
             if set_theme(a["--tema"]) != 0:
-                die("plymouth-set-default-theme не успя")
+                die(_("plymouth-set-default-theme не успя"))
             initramfs = True
         elif entry["teme_novi"] and a["--tema"] in entry["teme_novi"]:
             initramfs = True
@@ -219,7 +220,7 @@ def apply(a):
             else:
                 src = a["--grub-fon"]
                 if os.path.islink(src) or not png_ok(src, 4096) or os.path.getsize(src) > 20 * 1048576:
-                    die("фонът на GRUB трябва да е PNG до 4096 px и 20 MB")
+                    die(_("фонът на GRUB трябва да е PNG до 4096 px и 20 MB"))
                 os.makedirs(os.path.dirname(J.ROOT + BG_FINAL), exist_ok=True)
                 shutil.copyfile(src, J.ROOT + BG_FINAL)
                 os.chmod(J.ROOT + BG_FINAL, 0o644)
@@ -227,7 +228,7 @@ def apply(a):
         elif os.path.exists(J.ROOT + BG_FINAL) and gp.background == "keep":
             bg_final = BG_FINAL
         if now.get("GRUB_THEME") and bg_final:
-            say("Внимание: в GRUB има тема (GRUB_THEME) и тя покрива фона.")
+            say(_("Внимание: в GRUB има тема (GRUB_THEME) и тя покрива фона."))
         txt = J.dropin_text(cmdline, gp, bg_final)
         old_txt = open(J.DROPIN).read() if os.path.exists(J.DROPIN) else None
         if txt != old_txt:
@@ -236,57 +237,62 @@ def apply(a):
             os.chmod(J.DROPIN + ".tmp", 0o644)
             os.replace(J.DROPIN + ".tmp", J.DROPIN)
             entry["dropin"] = True
-            say("Записах " + J.DROPIN + ":\n" + "\n".join("  " + l for l in txt.splitlines() if not l.startswith("#")))
+            say(_("Записах ") + J.DROPIN + ":\n" + "\n".join("  " + l for l in txt.splitlines() if not l.startswith("#")))
             grub = True
         else:
-            say("GRUB: няма промяна.")
+            say(_("GRUB: няма промяна."))
 
     if initramfs:
-        say("Обновявам initramfs (анимацията се зарежда оттам). Това отнема минута-две…")
+        say(_("Обновявам initramfs (анимацията се зарежда оттам). Това отнема минута-две…"))
         if run(["update-initramfs", "-u", "-k", "all"]) != 0:
-            die("update-initramfs не успя. Старото зареждане е непокътнато, анимацията просто няма да се смени.")
+            die(_("update-initramfs не успя. Старото зареждане е непокътнато, анимацията просто няма да се смени."))
     if grub:
-        say("Обновявам GRUB…")
+        say(_("Обновявам GRUB…"))
         if run(["update-grub"]) != 0:
-            die("update-grub не успя. Изтрий " + J.DROPIN + " и пусни update-grub, или натисни „Върни както беше“.")
+            die(_("update-grub не успя. Изтрий ") + J.DROPIN + _(" и пусни update-grub, или натисни „Върни както беше“."))
     h.append(entry)
     save_hist(h)
-    say("\nГотово. Промените се виждат при следващото рестартиране.")
+    say(_("\nГотово. Промените се виждат при следващото рестартиране."))
 
 
 def reset():
     h = load_hist()
     if not h:
-        say("Програмата не е променяла нищо. Няма какво да връщам.")
+        say(_("Програмата не е променяла нищо. Няма какво да връщам."))
         return
     predi = h[0]
     if os.path.exists(J.DROPIN):
         os.remove(J.DROPIN)
-        say("Махнах " + J.DROPIN)
+        say(_("Махнах ") + J.DROPIN)
     keep = os.path.join(BACKUPS, "predi", os.path.basename(J.DROPIN))
     if predi.get("dropin") and os.path.exists(keep):
         shutil.copy2(keep, J.DROPIN)
-        say("Върнах стария " + J.DROPIN)
+        say(_("Върнах стария ") + J.DROPIN)
     if not predi.get("fon") and os.path.exists(J.ROOT + BG_FINAL):
         os.remove(J.ROOT + BG_FINAL)
     tema = predi.get("tema") or ""
     if tema and tema != cur_theme() and os.path.exists(f"{J.THEMES}/{tema}/{tema}.plymouth"):
-        say(f"Анимация: връщам {tema}")
+        say(_(f"Анимация: връщам {tema}"))
         set_theme(tema)
     for d in glob.glob(J.THEMES + "/" + J.PREFIX + "*"):
         if os.path.basename(d) != tema and os.path.isdir(d) and not os.path.islink(d):
             shutil.rmtree(d)
-            say("Махнах темата " + os.path.basename(d))
+            say(_("Махнах темата ") + os.path.basename(d))
     run(["update-initramfs", "-u", "-k", "all"])
     run(["update-grub"])
     os.makedirs(BACKUPS, exist_ok=True)
     os.replace(J.ISTORIA, os.path.join(BACKUPS, f"istoria-{time.strftime('%Y%m%d-%H%M%S')}.json"))
-    say("\nВсичко е както преди програмата. Вижда се при следващото рестартиране.")
+    say(_("\nВсичко е както преди програмата. Вижда се при следващото рестартиране."))
 
 
 def main():
+    if "--ezik" in sys.argv:
+        i = sys.argv.index("--ezik")
+        import ezik
+        ezik.set_ezik(sys.argv[i + 1] if i + 1 < len(sys.argv) else "bg")
+        del sys.argv[i:i + 2]
     if os.geteuid() != 0 and not TEST:
-        die("пуска се като root (през pkexec от програмата)")
+        die(_("пуска се като root (през pkexec от програмата)"))
     a = args(sys.argv[1:])
     if a.get("--varni"):
         reset()
