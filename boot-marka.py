@@ -225,6 +225,12 @@ def main_gui():
                     return
                 self.src = gf.get_path()
                 self.file_row.set_subtitle(os.path.basename(self.src))
+                try:                                   # цветът на фона: от ъгъла на първия кадър, за да се слее с екрана
+                    from PIL import Image
+                    px = Image.open(self.src).convert("RGB").getpixel((2, 2))
+                    c = Gdk.RGBA(); c.parse("#%02x%02x%02x" % px); self.color.set_rgba(c)
+                except Exception:
+                    pass
                 base = os.path.splitext(os.path.basename(self.src))[0]
                 if self.title.get_text() in ("", "Моята анимация"):
                     self.title.set_text(base[:30])

@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass, field
 
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 ROOT = os.environ.get("BOOT_MARKA_ROOT", "")            # за тестовете: пясъчник вместо /
 THEMES = ROOT + "/usr/share/plymouth/themes"
 GRUB_MAIN = ROOT + "/etc/default/grub"
