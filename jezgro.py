@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass, field
 
-VERSION = "0.1.1"
+VERSION = "0.2.0"
 ROOT = os.environ.get("BOOT_MARKA_ROOT", "")            # за тестовете: пясъчник вместо /
 THEMES = ROOT + "/usr/share/plymouth/themes"
 GRUB_MAIN = ROOT + "/etc/default/grub"
@@ -282,15 +282,16 @@ anim = Sprite(frames[0]);
 anim.SetPosition(wx + sw / 2 - frames[0].GetWidth() / 2, wy + sh * {ypos} - frames[0].GetHeight() / 2, 10);
 bottom = wy + sh * {ypos} + frames[0].GetHeight() / 2;
 {label}
+{ind_setup}
 tick = 0;
 fun refresh_callback () {{
     tick = tick + 1;
     idx = Math.Int(tick / DIV);
     idx = idx - Math.Int(idx / N) * N;
     anim.SetImage(frames[idx]);
+{ind_tick}
 }}
 Plymouth.SetRefreshFunction(refresh_callback);
-{progress}
 # парола (ако дискът е криптиран) и съобщения
 pw = Sprite();
 fun display_password_callback (prompt, bullets) {{
@@ -341,6 +342,55 @@ fun progress_callback (duration, progress) {{
 Plymouth.SetBootProgressFunction(progress_callback);"""
 
 
+# ---------------------------------------------------------------- какво има под анимацията (повтарящо се, не зависи от времето)
+INDIKATORI = [("begashta", "Бягаща светлинка (повтаря се)"), ("tochki", "Три пулсиращи точки"),
+              ("nadpis", "Надпис „Зареждане…“, който свети и угасва"), ("lenta", "Лента за напредъка (може да не стигне до края)"),
+              ("nyama", "Нищо")]
+IND = {
+    "begashta": ("""bar = Image("bar.png");
+barw = Math.Min(sw, sh) * 0.28;
+bary = bottom + sh * 0.05;
+barx = wx + sw / 2 - barw / 2;
+track = Sprite(bar.Scale(barw, 2));
+track.SetPosition(barx, bary + 1, 10);
+track.SetOpacity(0.22);
+seg = Sprite();""", """    p = tick / 90;
+    p = p - Math.Int(p);
+    a = p * 1.4 - 0.4;
+    b = p * 1.4;
+    if (a < 0) a = 0;
+    if (b > 1) b = 1;
+    segw = (b - a) * barw;
+    if (segw >= 2) {
+        seg.SetImage(bar.Scale(segw, 4));
+        seg.SetPosition(barx + a * barw, bary, 11);
+        seg.SetOpacity(0.9);
+    } else {
+        seg.SetOpacity(0);
+    }"""),
+    "tochki": ("""dot = Image("dot.png");
+ds = Math.Min(sw, sh) * 0.014;
+dot = dot.Scale(ds, ds);
+dy = bottom + sh * 0.05;
+d0 = Sprite(dot);
+d1 = Sprite(dot);
+d2 = Sprite(dot);
+d0.SetPosition(wx + sw / 2 - ds * 2.5, dy, 10);
+d1.SetPosition(wx + sw / 2 - ds * 0.5, dy, 10);
+d2.SetPosition(wx + sw / 2 + ds * 1.5, dy, 10);""", """    ph = tick * 0.11;
+    d0.SetOpacity(0.25 + 0.75 * (0.5 + 0.5 * Math.Sin(ph)));
+    d1.SetOpacity(0.25 + 0.75 * (0.5 + 0.5 * Math.Sin(ph - 0.9)));
+    d2.SetOpacity(0.25 + 0.75 * (0.5 + 0.5 * Math.Sin(ph - 1.8)));"""),
+    "nadpis": ("""zt = Image("zarezhdane.png");
+zk = (Math.Min(sw, sh) * 0.22) / zt.GetWidth();
+if (zk > 1) zk = 1;
+zt = zt.Scale(zt.GetWidth() * zk, zt.GetHeight() * zk);
+zs = Sprite(zt);
+zs.SetPosition(wx + sw / 2 - zt.GetWidth() / 2, bottom + sh * 0.04, 10);""",
+               """    zs.SetOpacity(0.3 + 0.7 * (0.5 + 0.5 * Math.Sin(tick * 0.06)));"""),
+}
+
+
 def slugify(s):
     tr = str.maketrans({"а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ж": "zh", "з": "z", "и": "i", "й": "y",
                         "к": "k", "л": "l", "м": "m", "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t", "у": "u",
@@ -360,7 +410,7 @@ class Custom:
     max_frames: int = 90
     label: str = ""
     label_color: tuple = (255, 255, 255)
-    progress: bool = True
+    indicator: str = "begashta"   # виж INDIKATORI
 
 
 def make_custom(c, workdir=None, log=print):
@@ -386,15 +436,29 @@ def make_custom(c, workdir=None, log=print):
         pass
     from PIL import Image, ImageDraw, ImageFont
     Image.new("RGB", (1, 1), (255, 255, 255)).save(os.path.join(d, "bar.png"))
-    label = ""
-    if c.label.strip():
-        fnt = None
+
+    def shrift(sz):
         for fp in ("/usr/share/fonts/opentype/inter/InterDisplay-SemiBold.otf", "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
                    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"):
             if os.path.exists(fp):
-                fnt = ImageFont.truetype(fp, 56)
-                break
-        fnt = fnt or ImageFont.load_default()
+                return ImageFont.truetype(fp, sz)
+        return ImageFont.load_default()
+
+    if c.indicator == "tochki":
+        big = Image.new("L", (256, 256), 0)
+        ImageDraw.Draw(big).ellipse((8, 8, 248, 248), fill=255)
+        dot = Image.new("RGBA", (64, 64), (*c.label_color, 0))
+        dot.putalpha(big.resize((64, 64), Image.LANCZOS))
+        dot.save(os.path.join(d, "dot.png"))
+    if c.indicator == "nadpis":
+        f2 = shrift(44)
+        tw = int(ImageDraw.Draw(Image.new("RGB", (1, 1))).textlength("Зареждане…", font=f2)) + 20
+        z = Image.new("RGBA", (tw, 66), (0, 0, 0, 0))
+        ImageDraw.Draw(z).text((10, 6), "Зареждане…", font=f2, fill=(*c.label_color, 255))
+        z.save(os.path.join(d, "zarezhdane.png"))
+    label = ""
+    if c.label.strip():
+        fnt = shrift(56)
         txt = c.label.strip()[:40]
         w = int(ImageDraw.Draw(Image.new("RGB", (1, 1))).textlength(txt, font=fnt)) + 20
         im = Image.new("RGBA", (max(w, 10), 80), (0, 0, 0, 0))
@@ -405,7 +469,8 @@ def make_custom(c, workdir=None, log=print):
     r_, g_, b_ = (x / 255 for x in c.bg)
     script = SCRIPT.format(title=c.title.replace('"', "'"), n=n, div=div, r=f"{r_:.3f}", g=f"{g_:.3f}", b=f"{b_:.3f}",
                            scale=f"{c.scale:.3f}", ypos=f"{c.ypos:.3f}", label=label,
-                           progress=PROGRESS.replace("{{", "{").replace("}}", "}") if c.progress else "")
+                           ind_setup=(PROGRESS.replace("{{", "{").replace("}}", "}") if c.indicator == "lenta" else IND.get(c.indicator, ("", ""))[0]),
+                           ind_tick=IND.get(c.indicator, ("", ""))[1])
     open(os.path.join(d, name + ".script"), "w", encoding="utf-8").write(script)
     final = f"/usr/share/plymouth/themes/{name}"
     open(os.path.join(d, name + ".plymouth"), "w", encoding="utf-8").write(

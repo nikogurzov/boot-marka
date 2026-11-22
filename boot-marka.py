@@ -197,8 +197,9 @@ def main_gui():
             g.add(self.size)
             self.fps = Adw.SpinRow.new_with_range(5, 30, 1); self.fps.set_title("Скорост, кадъра в секунда"); self.fps.set_value(20)
             g.add(self.fps)
-            self.prog = Adw.SwitchRow(title="Лента за напредъка отдолу", active=True)
-            g.add(self.prog)
+            self.ind = Adw.ComboRow(title="Отдолу", subtitle="Повтарящите се не зависят от това колко бързо зарежда компютърът",
+                                    model=Gtk.StringList.new([x[1] for x in J.INDIKATORI]))
+            g.add(self.ind)
             page.add(g)
             g2 = Adw.PreferencesGroup()
             self.make_b = Gtk.Button(label="Направи прегледа", css_classes=["pill"], halign=Gtk.Align.CENTER, sensitive=False)
@@ -242,7 +243,7 @@ def main_gui():
             c = self.color.get_rgba()
             return J.Custom(title=self.title.get_text().strip() or "Моята анимация", src=self.src,
                             bg=(int(c.red * 255), int(c.green * 255), int(c.blue * 255)), scale=self.size.get_value() / 100,
-                            fps=self.fps.get_value(), label=self.label.get_text(), progress=self.prog.get_active())
+                            fps=self.fps.get_value(), label=self.label.get_text(), indicator=J.INDIKATORI[self.ind.get_selected()][0])
 
         def make(self, *_):
             if not self.src:

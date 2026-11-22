@@ -80,7 +80,7 @@ class T(unittest.TestCase):
         J = self.J
         src = os.path.join(self.r, "a.gif")
         subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc=s=320x240:d=1:r=10", src], check=True)
-        d, slug, n, size = J.make_custom(J.Custom(title="Моята Проба", src=src, label="SimNet"), workdir=os.path.join(self.r, "w"), log=lambda s: None)
+        d, slug, n, size = J.make_custom(J.Custom(title="Моята Проба", src=src, label="SimNet", indicator="lenta"), workdir=os.path.join(self.r, "w"), log=lambda s: None)
         self.assertEqual("moyata-proba", slug)
         self.assertGreaterEqual(n, 5)
         r = helper(self.r, "--nova-tema", d, slug, "--tema", "boot-marka-" + slug)
