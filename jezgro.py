@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass, field
 
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 ROOT = os.environ.get("BOOT_MARKA_ROOT", "")            # за тестовете: пясъчник вместо /
 THEMES = ROOT + "/usr/share/plymouth/themes"
 GRUB_MAIN = ROOT + "/etc/default/grub"
@@ -343,73 +343,74 @@ Plymouth.SetBootProgressFunction(progress_callback);"""
 
 
 # ---------------------------------------------------------------- какво има под анимацията (повтарящо се, не зависи от времето)
-INDIKATORI = [("trikolor", "Трикольор: бяло, зелено, червено с искри (в стила на Google)"),
+INDIKATORI = [("trikolor", "Трикольор: три ивици като знаме се пълнят на място, с искри"),
               ("begashta", "Бягаща светлинка (повтаря се)"), ("tochki", "Три пулсиращи точки"),
               ("nadpis", "Надпис „Зареждане…“, който свети и угасва"), ("lenta", "Лента за напредъка (може да не стигне до края)"),
               ("nyama", "Нищо")]
 TRIKOLOR_SETUP = """tb = Image("b-bial.png");
 tz = Image("b-zelen.png");
 tc = Image("b-cherven.png");
-isk = Image("iskra.png");
-barw = Math.Min(sw, sh) * 0.30;
-bary = bottom + sh * 0.05;
+iskra0 = Image("iskra.png");
+md = Math.Min(sw, sh);
+barw = md * 0.26;
+bh = md * 0.006;
+if (bh < 3) bh = 3;
+gap = bh * 0.7;
 barx = wx + sw / 2 - barw / 2;
-iks = Math.Min(sw, sh) * 0.035;
-isk = isk.Scale(iks, iks);
-track = Sprite(tb.Scale(barw, 2));
-track.SetPosition(barx, bary + 1, 10);
-track.SetOpacity(0.15);
+bary = bottom + sh * 0.05;
+iks = md * 0.03;
+isk = iskra0.Scale(iks, iks);
+big = iskra0.Scale(iks * 2.2, iks * 2.2);
 col[0] = tb;
 col[1] = tz;
 col[2] = tc;
 j = 0;
 while (j < 3) {
+    trk[j] = Sprite(col[j].Scale(barw, bh));
+    trk[j].SetPosition(barx, bary + j * (bh + gap), 10);
+    trk[j].SetOpacity(0.14);
     segs[j] = Sprite();
     iskri[j] = Sprite(isk);
     iskri[j].SetOpacity(0);
     j = j + 1;
 }
-fl0 = Sprite(isk);
-fl1 = Sprite(isk);
-fl0.SetOpacity(0);
-fl1.SetOpacity(0);
-f0 = 0;
-f1 = 20;"""
+fl = Sprite(big);
+fl.SetOpacity(0);"""
 
-TRIKOLOR_TICK = """    j = 0;
+TRIKOLOR_TICK = """    t = tick / 150;
+    t = t - Math.Int(t);
+    fade = 1;
+    if (t > 0.8) fade = 1 - (t - 0.8) / 0.2;
+    j = 0;
     while (j < 3) {
-        p = tick / 130 + j * 0.14;
-        p = p - Math.Int(p);
-        e = p * p * (3 - 2 * p);
-        a = e * 1.35 - 0.35;
-        b = e * 1.35;
-        if (a < 0) a = 0;
-        if (b > 1) b = 1;
-        segw = (b - a) * barw;
-        if (segw >= 2) {
-            segs[j].SetImage(col[j].Scale(segw, 4));
-            segs[j].SetPosition(barx + a * barw, bary, 11 + j);
-            segs[j].SetOpacity(0.95);
-            iskri[j].SetPosition(barx + b * barw - iks / 2, bary + 2 - iks / 2, 20);
-            iskri[j].SetOpacity(0.45 + 0.55 * (0.5 + 0.5 * Math.Sin(tick * 0.8 + j * 2.1)));
+        f = (t - j * 0.1) / 0.45;
+        if (f < 0) f = 0;
+        if (f > 1) f = 1;
+        f = f * f * (3 - 2 * f);
+        fw = f * barw;
+        y = bary + j * (bh + gap);
+        if (fw >= 2) {
+            segs[j].SetImage(col[j].Scale(fw, bh));
+            segs[j].SetPosition(barx, y, 11);
+            segs[j].SetOpacity(0.95 * fade);
+            if (f < 1) {
+                iskri[j].SetPosition(barx + fw - iks / 2, y + bh / 2 - iks / 2, 20);
+                iskri[j].SetOpacity(0.5 + 0.5 * (0.5 + 0.5 * Math.Sin(tick * 0.9 + j * 2)));
+            } else {
+                iskri[j].SetOpacity(0);
+            }
         } else {
             segs[j].SetOpacity(0);
             iskri[j].SetOpacity(0);
         }
         j = j + 1;
     }
-    f0 = f0 - 1;
-    if (f0 <= 0) {
-        f0 = 40;
-        fl0.SetPosition(barx + Math.Random() * barw - iks / 2, bary + 2 - iks / 2, 19);
-    }
-    fl0.SetOpacity(Math.Sin(f0 / 40 * 3.14159) * 0.8);
-    f1 = f1 - 1;
-    if (f1 <= 0) {
-        f1 = 40;
-        fl1.SetPosition(barx + Math.Random() * barw - iks / 2, bary + 2 - iks / 2, 19);
-    }
-    fl1.SetOpacity(Math.Sin(f1 / 40 * 3.14159) * 0.8);"""
+    if (t > 0.62 && t < 0.8) {
+        fl.SetPosition(barx + barw - iks * 1.1, bary + bh + gap + bh / 2 - iks * 1.1, 21);
+        fl.SetOpacity(Math.Sin((t - 0.62) / 0.18 * 3.14159));
+    } else {
+        fl.SetOpacity(0);
+    }"""
 
 IND = {
     "trikolor": (TRIKOLOR_SETUP, TRIKOLOR_TICK),
