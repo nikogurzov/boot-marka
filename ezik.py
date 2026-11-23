@@ -76,7 +76,7 @@ EN = {
     "Ред на ядрото (сега): {}": "Kernel command line (now): {}",
     "Настройки от boot-marka: {}": "Settings from boot-marka: {}",
     "Теми: ": "Themes: ",
-    "да": "yes", "не": "no", "няма": "none",
+    "да": "yes", "не": "no", "няма": "none", "на Debian (по подразбиране)": "Debian (default)",
     # --- помощникът (prilozhi)
     "ГРЕШКА: ": "ERROR: ",
     "непознат аргумент: {}": "unknown argument: {}",
