@@ -251,6 +251,9 @@ def apply(a):
                 bg_final = BG_FINAL
         elif os.path.exists(J.ROOT + BG_FINAL) and gp.background == "keep":
             bg_final = BG_FINAL
+        # тих старт със скрито меню: без картинката на Debian, която иначе проблясва за миг
+        if mode == "tih" and gp.style == "hidden" and gp.background == "keep" and not bg_final and base.get("_BG_SET") != "1":
+            gp.background = ""
         if now.get("GRUB_THEME") and bg_final:
             say(_("Внимание: в GRUB има тема (GRUB_THEME) и тя покрива фона."))
         if set_quiet_boot(mode == "tih"):

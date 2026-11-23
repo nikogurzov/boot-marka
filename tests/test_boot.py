@@ -59,6 +59,16 @@ class T(unittest.TestCase):
         p = self.J.grub_from_settings(g)
         self.assertEqual("hidden", p.style)       # заради остарелия GRUB_HIDDEN_TIMEOUT
 
+    def test_tih_bez_kartinka_na_debian(self):
+        # тих старт + скрито меню: GRUB_BACKGROUND="" (иначе Debian показва своята картинка за миг)
+        r = helper(self.r, "--rezhim", "tih", "--grub-stil", "hidden", "--grub-vreme", "0")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        d = open(self.r + "/etc/default/grub.d/99-boot-marka.cfg").read()
+        self.assertIn('GRUB_BACKGROUND=""', d)
+        g = self.J.read_grub()
+        self.assertEqual("1", g["_BG_SET"])
+        self.assertEqual("", self.J.grub_from_settings(g).background)
+
     def test_apply_and_reset(self):
         r = helper(self.r, "--tema", "spinner", "--rezhim", "tih", "--grub-vreme", "3", "--grub-stil", "menu", "--grub-pomni", "1")
         self.assertEqual(0, r.returncode, r.stdout + r.stderr)

@@ -14,7 +14,7 @@ import sys as _sys
 _sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 from ezik import _
 
-VERSION = "0.6.0"
+VERSION = "0.6.1"
 ROOT = os.environ.get("BOOT_MARKA_ROOT", "")            # за тестовете: пясъчник вместо /
 THEMES = ROOT + "/usr/share/plymouth/themes"
 GRUB_MAIN = ROOT + "/etc/default/grub"
@@ -71,13 +71,17 @@ def read_grub(include_ours=True):
     """Ефективните настройки на GRUB така, както ги вижда update-grub (bash чете основния файл и grub.d/*.cfg)."""
     files = [GRUB_MAIN] + sorted(f for f in glob.glob(GRUB_DIR + "/*.cfg") if include_ours or f != DROPIN)
     src = "".join(f'[ -r {shlex.quote(f)} ] && . {shlex.quote(f)} >/dev/null 2>&1\n' for f in files)
-    out = "".join(f'printf "%s\\0" "${k}"\n' for k in GRUB_KEYS)
+    out = "".join(f'printf "%s\\0" "${k}"\n' for k in GRUB_KEYS) + 'printf "%s\\0" "${GRUB_BACKGROUND+1}"\n'
+
     try:
         r = subprocess.run(["bash", "-c", src + out], capture_output=True, text=True, timeout=10)
         vals = r.stdout.split("\0")
     except (OSError, subprocess.TimeoutExpired):
         vals = []
-    return {k: (vals[i] if i < len(vals) else "") for i, k in enumerate(GRUB_KEYS)}
+    g = {k: (vals[i] if i < len(vals) else "") for i, k in enumerate(GRUB_KEYS)}
+    # Debian (05_debian_theme): незададен GRUB_BACKGROUND = картинката на Debian; зададен, но празен = без картинка
+    g["_BG_SET"] = vals[len(GRUB_KEYS)] if len(vals) > len(GRUB_KEYS) else ""
+    return g
 
 
 @dataclass
@@ -99,7 +103,7 @@ def grub_from_settings(g):
         style = "menu"
     return GrubPlan(timeout=max(0, min(30, to)), style=style,
                     remember=g.get("GRUB_DEFAULT") == "saved" and g.get("GRUB_SAVEDEFAULT") == "true",
-                    background="keep", gfx=g.get("GRUB_GFXMODE") or "auto")
+                    background="" if g.get("_BG_SET") == "1" and not g.get("GRUB_BACKGROUND") else "keep", gfx=g.get("GRUB_GFXMODE") or "auto")
 
 
 def dropin_text(cmdline, gp, bg_final=None):
@@ -118,7 +122,7 @@ def dropin_text(cmdline, gp, bg_final=None):
     if bg_final:
         L.append(f"GRUB_BACKGROUND={shlex.quote(bg_final)}")
     elif gp.background == "":
-        L.append("unset GRUB_BACKGROUND")
+        L.append('GRUB_BACKGROUND=""')
     return "\n".join(L) + "\n"
 
 

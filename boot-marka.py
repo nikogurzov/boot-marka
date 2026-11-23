@@ -511,7 +511,8 @@ def main_gui():
             g2 = Adw.PreferencesGroup(title=_("Фон на менюто"),
                                       description=(_("⚠ В GRUB има тема (GRUB_THEME) и тя покрива фона.") if self.s.grub.get("GRUB_THEME") else
                                                    _("Картинка зад менюто на GRUB. Вижда се, ако менюто не е скрито.")))
-            self.bg_row = Adw.ActionRow(title=_("Картинка"), subtitle=os.path.basename(self.s.grub.get("GRUB_BACKGROUND", "")) or _("няма"))
+            self.bg_row = Adw.ActionRow(title=_("Картинка"), subtitle=os.path.basename(self.s.grub.get("GRUB_BACKGROUND", "")) or
+                                     (_("няма") if self.s.grub.get("_BG_SET") == "1" else _("на Debian (по подразбиране)")))
             pick = Gtk.Button(label=_("Избери…"), valign=Gtk.Align.CENTER)
             pick.connect("clicked", self.pick_bg)
             rm = Gtk.Button(icon_name="user-trash-symbolic", valign=Gtk.Align.CENTER, tooltip_text=_("Без картинка"))
