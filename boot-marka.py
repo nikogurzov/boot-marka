@@ -359,6 +359,8 @@ def main_gui():
                 ch.append(_(f"нова тема „{self.new_theme[2].title}“"))
             if self.sel_theme != self.s.theme:
                 ch.append(_(f"анимация: {self.s.theme or '—'} → {self.sel_theme}"))
+            if self.sel_mode == "tih" and self.s.qb is False:
+                ch.append(_("скриване на „Loading Linux…“ от GRUB"))
             if self.sel_mode != self.s.mode:
                 ch.append(_(f"текст: {J.MODES[self.s.mode][0]} → {J.MODES[self.sel_mode][0]}"))
             if self.grub_changed():
@@ -550,7 +552,7 @@ def main_gui():
         def apply(self, *_a):
             nt = self.new_theme
             theme = self.sel_theme if (self.sel_theme != self.s.theme or (nt and self.sel_theme == J.PREFIX + nt[1])) else None
-            mode = self.sel_mode if self.sel_mode != self.s.mode else None
+            mode = self.sel_mode if (self.sel_mode != self.s.mode or (self.sel_mode == "tih" and self.s.qb is False)) else None
             gp = self.gp if (self.grub_changed() or mode or self.nvidia) else None
             cmd = J.apply_command(HELPER, theme=theme, mode=mode, gp=gp, bg_src=self.bg_src,
                                   new_theme_dir=nt[0] if nt else None, new_slug=nt[1] if nt else None, nvidia=self.nvidia)

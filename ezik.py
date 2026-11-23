@@ -47,8 +47,11 @@ EN = {
         "Write on GitHub: <a href=\"https://github.com/nikogurzov/boot-marka/issues\">github.com/nikogurzov/boot-marka/issues</a>",
     # --- режими и варианти (jezgro)
     "Тих": "Quiet",
-    "Само анимацията. Без съобщения на ядрото и без мигащ курсор. Esc ги показва, ако потрябват.":
-        "Only the animation. No kernel messages and no blinking cursor. Press Esc to see them if needed.",
+    "Само анимацията. Без съобщения на ядрото, без „Loading Linux…“ от GRUB и без мигащ курсор. Esc ги показва, ако потрябват.":
+        "Only the animation. No kernel messages, no “Loading Linux…” from GRUB and no blinking cursor. Press Esc to see them if needed.",
+    "скриване на „Loading Linux…“ от GRUB": "hiding “Loading Linux…” from GRUB",
+    "GRUB: „Loading Linux …“ се скрива": "GRUB: “Loading Linux …” is hidden",
+    "GRUB: „Loading Linux …“ пак се показва": "GRUB: “Loading Linux …” is shown again",
     "Нормален": "Normal",
     "Анимация, но важните съобщения на системата може да се мярнат.": "Animation, but important system messages may flash by.",
     "Подробен": "Verbose",

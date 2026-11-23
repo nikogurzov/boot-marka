@@ -23,7 +23,7 @@ if bg is None:
 W, H, FPS = 1280, 720, 50
 D = tempfile.mkdtemp(prefix="bm-pregled-")
 J.make_custom(J.Custom(title="Преглед", src=src, bg=bg, scale=0.4, fps=20, indicator=ind), workdir=D, log=lambda x: None)
-frames = [Image.open(f).convert("RGB") for f in sorted(glob.glob(D + "/frame-*.png"), key=J._num)]
+frames = [Image.open(f).convert("RGBA") for f in sorted(glob.glob(D + "/frame-*.png"), key=J._num)]
 k = min(W, H) * 0.4 / frames[0].height
 frames = [f.resize((int(f.width * k), int(f.height * k)), Image.LANCZOS) for f in frames]
 fw0, fh0 = frames[0].size
@@ -45,7 +45,8 @@ enc = subprocess.Popen(["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_f
                         "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", out], stdin=subprocess.PIPE)
 for tick in range(1, int(FPS * sec)):
     im = Image.new("RGB", (W, H), bg)
-    im.paste(frames[(tick // 2) % len(frames)], (int(W / 2 - fw0 / 2), int(H * 0.45 - fh0 / 2)))
+    fr = frames[(tick // 2) % len(frames)]
+    im.paste(fr, (int(W / 2 - fw0 / 2), int(H * 0.45 - fh0 / 2)), fr)
     d = ImageDraw.Draw(im, "RGBA")
     if ind == "trikolor":
         barw, bh, NC = md * 0.30, max(4, md * 0.008), 24

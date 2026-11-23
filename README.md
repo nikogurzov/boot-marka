@@ -35,6 +35,7 @@ sudo apt install ./boot-marka_*_all.deb
 - Нищо не се записва, докато не натиснеш **„Приложи“** и не въведеш паролата (pkexec).
 - **Основният `/etc/default/grub` не се пипа.** Настройките са в отделен файл, `/etc/default/grub.d/99-boot-marka.cfg`, който може да се изтрие на ръка.
 - При първото прилагане програмата запазва как е било всичко преди нея (`/var/backups/boot-marka`).
+- В режим „Тих“ скрива и „Loading Linux …“ на GRUB: сменя само реда `quiet_boot` в `/etc/grub.d/10_linux` (оригиналът се пази, „Върни“ го слага обратно). При обновяване на GRUB apt може да попита за този файл — запазете своята версия.
 - Собствените теми са в `/usr/share/plymouth/themes/boot-marka-*`. Помощникът проверява всеки файл, преди да го сложи: само PNG кадри и скрипт, направен от програмата.
 - Ако дискът е криптиран, паролата се пита върху анимацията.
 - При NVIDIA програмата предлага поправката `nvidia-drm.modeset=1`, без която анимацията може да не се вижда.
@@ -56,6 +57,7 @@ boot-marka is a GTK 4 / libadwaita app for Debian that sets **how your computer 
 - **Below the animation:** looping indicators that don't pretend to know how long booting takes: a **tricolor shimmer**, a **filling flag**, a running light, pulsing dots or “Loading…” text. The classic progress bar is still there.
 - **Boot text:** Quiet (only the animation, no kernel messages, no blinking cursor), Normal, or Verbose. Your other kernel options stay untouched.
 - **GRUB:** hidden menu, countdown or menu; timeout; remember last choice; resolution; background picture.
+- **Quiet mode also hides GRUB's “Loading Linux …”** by changing only the `quiet_boot` line in `/etc/grub.d/10_linux` (original kept, restored by Undo; on a GRUB upgrade apt may ask about this file — keep your version).
 - **Safe:** nothing is written until you press “Apply” and enter your password; settings go to a separate `/etc/default/grub.d/99-boot-marka.cfg` (the main `/etc/default/grub` is never touched); the original state is saved; **↶ Undo everything** restores it.
 
 ![The gallery in English](docs/en/anim.png)

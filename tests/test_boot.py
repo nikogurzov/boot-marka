@@ -20,6 +20,8 @@ def sandbox():
         d = r + f"/usr/share/plymouth/themes/{t}"
         os.makedirs(d)
         open(f"{d}/{t}.plymouth", "w").write(f"[Plymouth Theme]\nName={t}\nModuleName=two-step\n")
+    os.makedirs(r + "/etc/grub.d")
+    open(r + "/etc/grub.d/10_linux", "w").write('#! /bin/sh\nquiet_boot="0"\nquick_boot="0"\n')
     os.makedirs(r + "/etc/plymouth")
     open(r + "/etc/plymouth/plymouthd.conf", "w").write("[Daemon]\nTheme=bgrt\n")
     return r
@@ -71,9 +73,11 @@ class T(unittest.TestCase):
         self.assertIn("update-initramfs", r.stdout)
         # основният файл не е пипан
         self.assertIn("GRUB_TIMEOUT=5", open(self.r + "/etc/default/grub").read())
+        self.assertIn('quiet_boot="1"', open(self.r + "/etc/grub.d/10_linux").read())
         r = helper(self.r, "--varni")
         self.assertEqual(0, r.returncode, r.stdout + r.stderr)
         self.assertFalse(os.path.exists(self.r + "/etc/default/grub.d/99-boot-marka.cfg"))
+        self.assertIn('quiet_boot="0"', open(self.r + "/etc/grub.d/10_linux").read())
         self.assertIn("Theme=bgrt", open(self.r + "/etc/plymouth/plymouthd.conf").read())
 
     def test_custom_theme(self):

@@ -14,12 +14,13 @@ import sys as _sys
 _sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 from ezik import _
 
-VERSION = "0.5.1"
+VERSION = "0.6.0"
 ROOT = os.environ.get("BOOT_MARKA_ROOT", "")            # за тестовете: пясъчник вместо /
 THEMES = ROOT + "/usr/share/plymouth/themes"
 GRUB_MAIN = ROOT + "/etc/default/grub"
 GRUB_DIR = ROOT + "/etc/default/grub.d"
 DROPIN = GRUB_DIR + "/99-boot-marka.cfg"
+G10 = ROOT + "/etc/grub.d/10_linux"                     # quiet_boot="1" скрива „Loading Linux …“ и „Loading initial ramdisk …“
 ISTORIA = ROOT + "/var/lib/boot-marka/istoria.json"
 PREFIX = "boot-marka-"                                   # собствените теми: boot-marka-<име>
 SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,40}$")
@@ -31,7 +32,7 @@ GFX = re.compile(r"^(auto|[0-9]{3,4}x[0-9]{3,4}(x[0-9]{2})?)$")
 MANAGED = re.compile(r"^(quiet|splash|nosplash|loglevel=\S*|udev\.log_level=\S*|rd\.udev\.log_level=\S*|"
                      r"systemd\.show_status=\S*|rd\.systemd\.show_status=\S*|vt\.global_cursor_default=\S*|plymouth\.enable=\S*)$")
 MODES = {
-    "tih": (_("Тих"), _("Само анимацията. Без съобщения на ядрото и без мигащ курсор. Esc ги показва, ако потрябват."),
+    "tih": (_("Тих"), _("Само анимацията. Без съобщения на ядрото, без „Loading Linux…“ от GRUB и без мигащ курсор. Esc ги показва, ако потрябват."),
             ["quiet", "splash", "loglevel=3", "udev.log_level=3", "rd.udev.log_level=3",
              "systemd.show_status=false", "rd.systemd.show_status=false", "vt.global_cursor_default=0"]),
     "normalen": (_("Нормален"), _("Анимация, но важните съобщения на системата може да се мярнат."), ["quiet", "splash"]),
@@ -243,6 +244,7 @@ class State:
     ours: bool
     nvidia: str
     crypt: bool
+    qb: object = None          # quiet_boot в 10_linux: True/False/None
 
 
 def collect():
@@ -254,7 +256,16 @@ def collect():
         now = ""
     return State(theme=current_theme(), themes=themes(), grub=g, grub_base=gb, cmdline_now=now,
                  mode=detect_mode(g.get("GRUB_CMDLINE_LINUX_DEFAULT", "")), plan=grub_from_settings(g),
-                 ours=os.path.exists(DROPIN), nvidia=nvidia_note(), crypt=encrypted())
+                 ours=os.path.exists(DROPIN), nvidia=nvidia_note(), crypt=encrypted(), qb=quiet_boot())
+
+
+def quiet_boot():
+    """True/False според /etc/grub.d/10_linux; None, ако файлът липсва или няма такъв ред."""
+    try:
+        m = re.search(r'^quiet_boot="([01])"', open(G10).read(), re.M)
+        return None if not m else m.group(1) == "1"
+    except OSError:
+        return None
 
 
 def history():

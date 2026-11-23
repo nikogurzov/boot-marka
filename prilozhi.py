@@ -176,6 +176,30 @@ def first_backup(h):
     say(_("Пазя как е било преди програмата: ") + d)
 
 
+# ---------------------------------------------------------------- „Loading Linux …“ от GRUB (/etc/grub.d/10_linux)
+def set_quiet_boot(on):
+    """Сменя само реда quiet_boot="0|1". Оригиналът се пази веднъж в /var/backups/boot-marka/predi/10_linux."""
+    try:
+        txt = open(J.G10).read()
+    except OSError:
+        return False
+    if not re.search(r'^quiet_boot="[01]"', txt, re.M):
+        return False
+    new = re.sub(r'^quiet_boot="[01]"', 'quiet_boot="%s"' % ("1" if on else "0"), txt, count=1, flags=re.M)
+    if new == txt:
+        return False
+    keep = os.path.join(BACKUPS, "predi", "10_linux")
+    if not os.path.exists(keep):
+        os.makedirs(os.path.dirname(keep), exist_ok=True)
+        shutil.copy2(J.G10, keep)
+    mode = os.stat(J.G10).st_mode
+    open(J.G10 + ".tmp", "w").write(new)
+    os.chmod(J.G10 + ".tmp", mode)
+    os.replace(J.G10 + ".tmp", J.G10)
+    say(_("GRUB: „Loading Linux …“ се скрива") if on else _("GRUB: „Loading Linux …“ пак се показва"))
+    return True
+
+
 # ---------------------------------------------------------------- прилагане
 def apply(a):
     h = load_hist()
@@ -229,6 +253,9 @@ def apply(a):
             bg_final = BG_FINAL
         if now.get("GRUB_THEME") and bg_final:
             say(_("Внимание: в GRUB има тема (GRUB_THEME) и тя покрива фона."))
+        if set_quiet_boot(mode == "tih"):
+            entry["10_linux"] = True
+            grub = True
         txt = J.dropin_text(cmdline, gp, bg_final)
         old_txt = open(J.DROPIN).read() if os.path.exists(J.DROPIN) else None
         if txt != old_txt:
@@ -268,6 +295,10 @@ def reset():
     if predi.get("dropin") and os.path.exists(keep):
         shutil.copy2(keep, J.DROPIN)
         say(_("Върнах стария ") + J.DROPIN)
+    keep10 = os.path.join(BACKUPS, "predi", "10_linux")
+    if os.path.exists(keep10) and os.path.exists(J.G10):
+        shutil.copy2(keep10, J.G10)
+        say(_("Върнах стария ") + J.G10)
     if not predi.get("fon") and os.path.exists(J.ROOT + BG_FINAL):
         os.remove(J.ROOT + BG_FINAL)
     tema = predi.get("tema") or ""
